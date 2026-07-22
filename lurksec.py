@@ -2,10 +2,13 @@ import argparse
 import json
 import os
 import sys
+import time
 import traceback
 import webbrowser
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
+
+SUMMARY_CACHE = {"timestamp": 0, "data": None}
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -391,7 +394,7 @@ def main():
                 print(f"  [{inc['engine']}] ({inc['severity']}) {inc['title']} | Evidence: {inc['evidence']}")
     else:
         server_address = ("", args.port)
-        httpd = HTTPServer(server_address, LurkSecHandler)
+        httpd = ThreadingHTTPServer(server_address, LurkSecHandler)
         url = f"http://localhost:{args.port}"
         print(f"[+] LurkSec Master Console listening on {url}")
         webbrowser.open(url)
