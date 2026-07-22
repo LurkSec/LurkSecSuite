@@ -160,20 +160,35 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 procs = ProcessAuditor.get_live_processes()
                 nodes = []
                 edges = []
+                tree_lines = []
+                pid_dict = {p["pid"]: p for p in procs}
+
                 for p in procs:
                     pid = p.get("pid")
                     ppid = p.get("ppid", 0)
                     name = p.get("name", "Unknown")
-                    cmd = p.get("command_line", "")
+                    cmd = p.get("cmdline") or p.get("command_line") or name
+                    parent_name = p.get("parent_name") or (pid_dict.get(ppid, {}).get("name") if ppid in pid_dict else "System")
+
+                    is_susp = any(s in cmd.lower() for s in ["-enc", "bypass", "downloadstring", "mimikatz", "temp"])
                     nodes.append({
                         "id": pid,
-                        "label": f"{name}\n(PID: {pid})",
-                        "title": f"CommandLine: {cmd}",
-                        "group": "suspicious" if any(s in cmd.lower() for s in ["-enc", "bypass", "downloadstring", "mimikatz"]) else "normal"
+                        "label": f"{name}\n({pid})",
+                        "title": f"PID: {pid} | PPID: {ppid}\nParent: {parent_name}\nCmd: {cmd}",
+                        "group": "suspicious" if is_susp else "normal"
                     })
-                    if ppid and any(parent["pid"] == ppid for parent in procs):
+                    if ppid and ppid in pid_dict:
                         edges.append({"from": ppid, "to": pid})
-                self.send_json({"nodes": nodes, "edges": edges, "total_processes": len(procs)})
+
+                    tree_lines.append(f"[{'HIGH' if is_susp else 'OK'}] {parent_name} (PID {ppid}) ──► {name} (PID {pid}) | {cmd[:90]}")
+
+                self.send_json({
+                    "nodes": nodes,
+                    "edges": edges,
+                    "tree_text": "\n".join(tree_lines),
+                    "total_processes": len(procs)
+                })
+
 
 
             elif path == "/api/shield/inspect":
@@ -565,7 +580,11 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 rule_id = body.get("id", "")
                 self.send_json(POLICY_ENGINE.delete_rule(rule_id))
 
+            elif path == "/api/intel/feed/sync":
+                self.send_json(THREAT_FEED.fetch_live_feed())
+
             elif path == "/api/terminal/exec":
+
                 import subprocess
                 cmd_str = body.get("command", "").strip()
                 allowed = ["whoami", "netstat", "ipconfig", "tasklist", "ping", "nslookup", "systeminfo", "dir", "sc", "hostname"]

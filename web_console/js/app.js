@@ -1068,12 +1068,15 @@ async function loadCloudData() {
         if (awsEl) { awsEl.innerText = d.aws_available ? 'ACTIVE' : 'N/A'; awsEl.style.color = d.aws_available ? '#3fb950' : '#f85149'; }
         const azureEl = document.getElementById('suite-cloud-azure');
         if (azureEl) { azureEl.innerText = d.azure_available ? 'ACTIVE' : 'N/A'; azureEl.style.color = d.azure_available ? '#3fb950' : '#f85149'; }
-        document.getElementById('suite-cloud-total').innerText = d.total_findings || 0;
-        document.getElementById('suite-cloud-high').innerText = d.high_severity || 0;
+        const totEl = document.getElementById('suite-cloud-total');
+        if (totEl) totEl.innerText = d.total_findings || 0;
+        const highEl = document.getElementById('suite-cloud-high');
+        if (highEl) highEl.innerText = d.high_severity || 0;
         renderCloudFindings(d.all_findings || [], d.aws_available, d.azure_available);
         renderCloudBaseline(d.baseline || []);
     } catch(e) { console.warn('Cloud API error:', e); }
 }
+
 
 function renderCloudFindings(findings, awsOk, azureOk) {
     const c = document.getElementById('suite-cloud-findings-container');
@@ -1682,31 +1685,39 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-soar-refresh')?.addEventListener('click', loadSOARData);
 });
 
-// Process Tree Graph with Vis.js
+// Process Tree Graph with Vis.js & Text Fallback
 let processNetwork = null;
 async function renderProcessTreeGraph() {
     const container = document.getElementById('vis-process-tree');
-    if (!container) return;
+    const textContainer = document.getElementById('tree-view-container');
     try {
         const res = await fetch('/api/trace/tree');
         if (!res.ok) return;
         const data = await res.json();
-        const nodes = new vis.DataSet(data.nodes.map(n => ({
-            id: n.id,
-            label: n.label,
-            title: n.title,
-            color: n.group === 'suspicious' ? { background: '#f85149', border: '#da3633' } : { background: '#1f6feb', border: '#388bfd' },
-            font: { color: '#ffffff', face: 'JetBrains Mono', size: 12 }
-        })));
-        const edges = new vis.DataSet(data.edges.map(e => ({ from: e.from, to: e.to, arrows: 'to', color: '#8b949e' })));
-        const options = {
-            physics: { solver: 'forceAtlas2Based', forceAtlas2Based: { gravitationalConstant: -30 } },
-            interaction: { hover: true, tooltipDelay: 100 }
-        };
-        if (processNetwork) processNetwork.destroy();
-        processNetwork = new vis.Network(container, { nodes, edges }, options);
+
+        if (textContainer && data.tree_text) {
+            textContainer.textContent = data.tree_text;
+        }
+
+        if (container && window.vis) {
+            const nodes = new vis.DataSet(data.nodes.map(n => ({
+                id: n.id,
+                label: n.label,
+                title: n.title,
+                color: n.group === 'suspicious' ? { background: '#f85149', border: '#da3633' } : { background: '#1f6feb', border: '#388bfd' },
+                font: { color: '#ffffff', face: 'JetBrains Mono', size: 12 }
+            })));
+            const edges = new vis.DataSet(data.edges.map(e => ({ from: e.from, to: e.to, arrows: 'to', color: '#8b949e' })));
+            const options = {
+                physics: { solver: 'forceAtlas2Based', forceAtlas2Based: { gravitationalConstant: -30 } },
+                interaction: { hover: true, tooltipDelay: 100 }
+            };
+            if (processNetwork) processNetwork.destroy();
+            processNetwork = new vis.Network(container, { nodes, edges }, options);
+        }
     } catch(e) { console.warn('Process Tree Graph error:', e); }
 }
+
 
 // EDR Policy Engine Handlers
 async function loadEDRPolicies() {
@@ -1781,11 +1792,18 @@ async function deleteEDRPolicy(id) {
 // Live Threat Feed Sync
 async function syncThreatFeed() {
     const msg = document.getElementById('threat-feed-sync-msg');
-    if (msg) msg.textContent = '⚡ Fetching live IOC feed from ThreatFox API...';
+    if (msg) msg.textContent = 'Fetching live IOC feed from ThreatFox API...';
     try {
         const res = await fetch('/api/intel/feed/sync');
-        const d = await res.json();
-        if (msg) msg.textContent = d.message || 'Sync completed.';
+        const text = await res.text();
+        let d = {};
+        try {
+            d = JSON.parse(text);
+        } catch(err) {
+            if (msg) msg.textContent = 'Server response error. Please restart lurksec.py to activate Threat Feed endpoint.';
+            return;
+        }
+        if (msg) msg.textContent = d.message || 'Threat feed sync completed.';
         if (document.getElementById('suite-intel-feed')) {
             document.getElementById('suite-intel-feed').innerText = d.count || 0;
         }
@@ -1802,7 +1820,7 @@ async function execTerminalCmd() {
     const cmd = input.value.trim();
     if (!cmd) return;
 
-    output.textContent += `\n\nlurksec> ${cmd}\nExecuting...`;
+    output.textContent += `\n\nC:\\LurkSec> ${cmd}\nExecuting...`;
     output.scrollTop = output.scrollHeight;
     input.value = '';
 
@@ -1830,7 +1848,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') execTerminalCmd();
     });
 
+    document.querySelectorAll('[data-tab="trace-tree"]').forEach(btn => {
+        btn.addEventListener('click', () => setTimeout(renderProcessTreeGraph, 150));
+    });
+
     loadEDRPolicies();
     setTimeout(renderProcessTreeGraph, 800);
 });
+
 
