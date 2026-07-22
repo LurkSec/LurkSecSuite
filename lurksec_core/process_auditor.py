@@ -10,7 +10,7 @@ class ProcessAuditor:
     @classmethod
     def get_live_processes(cls) -> List[Dict[str, Any]]:
         now = time.time()
-        if now - cls._CACHE_TIME < 3 and cls._CACHED_PROCESSES:
+        if now - cls._CACHE_TIME < 1 and cls._CACHED_PROCESSES:
             return cls._CACHED_PROCESSES
 
         processes = []

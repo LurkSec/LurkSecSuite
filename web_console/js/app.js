@@ -10,11 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
 let state = {
     masterData: {},
     socChart: null,
-    autoRefreshActive: false,
+    autoRefreshActive: localStorage.getItem('lurksec_auto_refresh') !== 'false',
     autoRefreshInterval: null,
     sortColumn: 'timestamp',
     sortDirection: 'desc'
 };
+
 
 function initNavigation() {
     const parentBtns = document.querySelectorAll('.nav-parent-btn');
@@ -641,25 +642,37 @@ function setupEventListeners() {
     }
 
     const btnAutoRefresh = document.getElementById('btn-auto-refresh');
+    function updateAutoRefreshUI() {
+        if (!btnAutoRefresh) return;
+        if (state.autoRefreshActive) {
+            btnAutoRefresh.innerText = `Auto-Refresh: LIVE (1s)`;
+            btnAutoRefresh.style.borderColor = "#3fb950";
+            btnAutoRefresh.style.color = "#3fb950";
+            if (!state.autoRefreshInterval) {
+                state.autoRefreshInterval = setInterval(() => loadMasterData(), 1000);
+            }
+        } else {
+            btnAutoRefresh.innerText = `Auto-Refresh: OFF`;
+            btnAutoRefresh.style.borderColor = "";
+            btnAutoRefresh.style.color = "";
+            if (state.autoRefreshInterval) {
+                clearInterval(state.autoRefreshInterval);
+                state.autoRefreshInterval = null;
+            }
+        }
+    }
+
     if (btnAutoRefresh) {
         btnAutoRefresh.addEventListener('click', () => {
             state.autoRefreshActive = !state.autoRefreshActive;
-            if (state.autoRefreshActive) {
-                btnAutoRefresh.innerText = `Auto-Refresh: ON (5s)`;
-                btnAutoRefresh.style.borderColor = "#3fb950";
-                btnAutoRefresh.style.color = "#3fb950";
-                state.autoRefreshInterval = setInterval(() => loadMasterData(), 5000);
-            } else {
-                btnAutoRefresh.innerText = `Auto-Refresh: OFF`;
-                btnAutoRefresh.style.borderColor = "";
-                btnAutoRefresh.style.color = "";
-                if (state.autoRefreshInterval) {
-                    clearInterval(state.autoRefreshInterval);
-                    state.autoRefreshInterval = null;
-                }
-            }
+            localStorage.setItem('lurksec_auto_refresh', state.autoRefreshActive ? 'true' : 'false');
+            updateAutoRefreshUI();
         });
     }
+
+    // Auto-start 1-second live polling on load if enabled
+    updateAutoRefreshUI();
+
 
     // Per-Module Exports
     const btnSocJson = document.getElementById('btn-export-soc-json');
