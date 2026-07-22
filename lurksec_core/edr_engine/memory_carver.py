@@ -43,12 +43,12 @@ class MemoryCarver:
 
         if not path:
             return {
-                "success": True,
+                "success": False,
                 "timestamp": now,
                 "pid": pid,
-                "strings_found": 184,
-                "iocs": ["198.51.100.44", "http://evil-c2.org/beacon", "ReflectiveLoader"],
-                "message": f"Process PID {pid} memory layout carved (184 ASCII strings & 3 C2 IOCs extracted)."
+                "strings_found": 0,
+                "iocs": [],
+                "message": f"Process PID {pid} executable path could not be resolved from OS API."
             }
 
         try:
@@ -77,14 +77,14 @@ class MemoryCarver:
                 "strings_found": len(printable_strings),
                 "iocs": iocs[:20],
                 "sample_strings": printable_strings[:15],
-                "message": f"Successfully carved {len(printable_strings)} memory strings and {len(iocs)} IOCs from PID {pid}."
+                "message": f"Successfully carved {len(printable_strings)} memory/executable strings and {len(iocs)} IOCs from PID {pid}."
             }
-        except Exception:
+        except Exception as ex:
             return {
-                "success": True,
+                "success": False,
                 "timestamp": now,
                 "pid": pid,
-                "strings_found": 142,
-                "iocs": ["198.51.100.44", "http://c2-server.net/payload"],
-                "message": f"Process PID {pid} memory layout carved (142 ASCII strings extracted)."
+                "strings_found": 0,
+                "iocs": [],
+                "message": f"Unable to carve memory/executable file for PID {pid}: {str(ex)}"
             }

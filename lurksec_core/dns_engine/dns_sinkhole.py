@@ -1,55 +1,41 @@
-import re
+import socket
 import time
 from typing import Dict, List, Any
 
 class DNSSinkhole:
     """
     LurkDNS: Malicious Domain Sinkhole & DNS Query Security Inspector.
-    Filters C2 domains, tracks query streams, and evaluates DNS-over-HTTPS (DoH) security.
+    Filters C2 domains, tracks query streams, and evaluates real DNS queries.
     """
 
     KNOWN_MALICIOUS_DOMAINS = [
-        "cobaltstrike-c2.badactor.com",
+        "c2-beacon-sinkhole.internal",
         "feodo-tracker-c2.xyz",
         "lockbit-ransomware.pay",
         "mimikatz-exfil.top",
-        "phishing-apple-login.online",
+        "phishing-login.online",
         "evil-download-server.cc",
         "trickbot-botnet.net",
         "asyncrat-beacon.info"
     ]
 
     def __init__(self):
-        self.sinkhole_log = [
-            {
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "client_ip": "192.168.1.105",
-                "domain": "cobaltstrike-c2.badactor.com",
-                "query_type": "A",
-                "status": "SINKHOLED",
-                "response_ip": "127.0.0.1",
-                "severity": "HIGH",
-                "category": "C2 Beaconing"
-            },
-            {
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "client_ip": "192.168.1.112",
-                "domain": "feodo-tracker-c2.xyz",
-                "query_type": "AAAA",
-                "status": "SINKHOLED",
-                "response_ip": "127.0.0.1",
-                "severity": "HIGH",
-                "category": "Botnet C2"
-            }
-        ]
+        self.sinkhole_log: List[Dict[str, Any]] = []
 
     def inspect_query(self, domain: str, client_ip: str = "127.0.0.1", query_type: str = "A") -> Dict[str, Any]:
         now = time.strftime("%Y-%m-%d %H:%M:%S")
         clean_domain = domain.strip().lower()
 
-        is_malicious = any(bad in clean_domain for bad in ["badactor", "c2", "ransomware", "exfil", "phishing", "evil", "botnet", "asyncrat"])
+        is_malicious = any(bad in clean_domain for bad in ["badactor", "c2", "ransomware", "exfil", "phishing", "evil", "botnet", "asyncrat"]) or clean_domain in self.KNOWN_MALICIOUS_DOMAINS
 
-        if is_malicious or clean_domain in self.KNOWN_MALICIOUS_DOMAINS:
+        resolved_ip = "127.0.0.1"
+        if not is_malicious:
+            try:
+                resolved_ip = socket.gethostbyname(clean_domain)
+            except Exception:
+                resolved_ip = "NXDOMAIN / Unresolved"
+
+        if is_malicious:
             res = {
                 "timestamp": now,
                 "client_ip": client_ip,
@@ -68,10 +54,10 @@ class DNSSinkhole:
                 "domain": clean_domain,
                 "query_type": query_type,
                 "status": "ALLOWED",
-                "response_ip": "1.1.1.1",
+                "response_ip": resolved_ip,
                 "severity": "PASS",
                 "category": "Legitimate DNS Query",
-                "message": f"DNS Query '{clean_domain}' resolved cleanly."
+                "message": f"DNS Query '{clean_domain}' resolved to {resolved_ip}."
             }
 
         self.sinkhole_log.insert(0, res)
@@ -89,3 +75,4 @@ class DNSSinkhole:
             "recent_queries": self.sinkhole_log[:20],
             "known_bad_domains": self.KNOWN_MALICIOUS_DOMAINS
         }
+

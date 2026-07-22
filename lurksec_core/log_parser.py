@@ -81,12 +81,5 @@ class SIEMLogParser:
         except Exception:
             pass
 
-        if not events:
-            now = time.strftime("%Y-%m-%d %H:%M:%S")
-            events = [
-                {"event_key": "EVT-1001", "event_id": 4624, "log_name": "Security", "provider": "Microsoft-Windows-Security-Auditing", "timestamp": now, "user": "NT AUTHORITY\\SYSTEM", "source_ip": "127.0.0.1", "severity": "LOW", "message": "Successful User Authentication / Logon"},
-                {"event_key": "EVT-1002", "event_id": 7040, "log_name": "System", "provider": "Service Control Manager", "timestamp": now, "user": "SYSTEM", "source_ip": "127.0.0.1", "severity": "MEDIUM", "message": "System Service start type modified"}
-            ]
-
         events.sort(key=lambda x: x["timestamp"], reverse=True)
         return events

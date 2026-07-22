@@ -1139,22 +1139,15 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => setTimeout(loadHuntSuiteData, 100));
     });
 
-    document.getElementById('suite-hunt-sample-select')?.addEventListener('change', (e) => {
-        const input = document.getElementById('suite-hunt-input');
-        if (input && e.target.value) {
-            input.value = e.target.value;
-        }
-    });
-
     document.getElementById('btn-suite-hunt-scan')?.addEventListener('click', async () => {
         const input = document.getElementById('suite-hunt-input');
         const output = document.getElementById('suite-hunt-output');
         if (!input || !input.value) {
-            alert("Please enter or select a payload string to scan.");
+            alert("Please enter a command line, PID, or payload string to scan.");
             return;
         }
 
-        output.innerText = `[+] Scanning payload string against 8 SIGMA rules & 5 YARA signatures...`;
+        output.innerText = `[+] Scanning string against SIGMA rules & YARA signatures...`;
         try {
             const res = await fetch(`/api/hunt/scan?sample=${encodeURIComponent(input.value)}`);
             const result = await res.json();
@@ -1266,33 +1259,8 @@ function renderYaraSignatures(sigs) {
     `).join("");
 }
 
-// Telemetry Validation Simulator Handlers
+// Master Incident Containment Console
 document.addEventListener('DOMContentLoaded', () => {
-    const txt = document.getElementById('sim-status-text');
-
-    document.getElementById('btn-sim-ransomware')?.addEventListener('click', async () => {
-        if (txt) txt.innerText = 'Injecting Ransomware VSS Deletion Event...';
-        const res = await fetch('/api/simulate?type=ransomware');
-        const data = await res.json();
-        if (txt) txt.innerText = data.message;
-        loadMasterData();
-    });
-
-    document.getElementById('btn-sim-waf')?.addEventListener('click', async () => {
-        if (txt) txt.innerText = 'Injecting WAF SQLi Payload...';
-        const res = await fetch('/api/simulate?type=waf_sqli');
-        const data = await res.json();
-        if (txt) txt.innerText = data.message;
-        loadMasterData();
-    });
-
-    document.getElementById('btn-sim-decoy')?.addEventListener('click', async () => {
-        if (txt) txt.innerText = 'Injecting Honeypot Probe Telemetry...';
-        const res = await fetch('/api/simulate?type=honeypot');
-        const data = await res.json();
-        if (txt) txt.innerText = data.message;
-        loadMasterData();
-    });
 
     // Master Incident Containment Console Executor
     document.getElementById('btn-soc-execute-action')?.addEventListener('click', async () => {
@@ -1327,32 +1295,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-tab="guard-itdr"]').forEach(btn => btn.addEventListener('click', () => setTimeout(loadGuardSuiteData, 100)));
 
     // Interactive Malware Sandbox Inspector
-    const sandPreset = document.getElementById('suite-sand-sample-select');
-    if (sandPreset) {
-        sandPreset.addEventListener('change', (e) => {
-            const val = e.target.value;
-            if (val && val.includes('|')) {
-                const parts = val.split('|');
-                document.getElementById('suite-sand-name-input').value = parts[0];
-                document.getElementById('suite-sand-text-input').value = parts[1];
-            }
-        });
-    }
-
     document.getElementById('btn-suite-sand-analyze')?.addEventListener('click', async () => {
-        const name = document.getElementById('suite-sand-name-input').value || 'sample.exe';
-        const text = document.getElementById('suite-sand-text-input').value || '';
+        const nameInput = document.getElementById('suite-sand-name-input');
+        const name = nameInput ? nameInput.value.trim() : '';
         const out = document.getElementById('suite-sand-output');
-        if (out) out.innerText = `[+] Analyzing binary '${name}' in LurkSand PE Sandbox...`;
+        if (!name) {
+            alert("Please enter an executable file path on disk (e.g., C:\\Windows\\System32\\cmd.exe)");
+            return;
+        }
+        if (out) out.innerText = `[+] Analyzing binary file '${name}' in LurkSand PE Sandbox...`;
 
         try {
-            const res = await fetch(`/api/sand/analyze?name=${encodeURIComponent(name)}&text=${encodeURIComponent(text)}`);
+            const res = await fetch(`/api/sand/analyze?name=${encodeURIComponent(name)}`);
             const d = await res.json();
             if (out) {
                 out.innerText = `[+] LurkSand PE Malware Analysis Complete:\n` +
-                    `  Sample: ${d.sample_name}\n` +
+                    `  Sample File: ${d.sample_name}\n` +
+                    `  File Found on Disk: ${d.file_exists ? 'YES' : 'NO'}\n` +
                     `  Verdict: ${d.verdict} (Threat Score: ${d.threat_score}/100 | Entropy: ${d.entropy})\n` +
-                    `  Packed: ${d.is_packed ? 'YES (High Entropy Packer Detected)' : 'NO'}\n` +
+                    `  Packed/Compressed: ${d.is_packed ? 'YES (High Entropy Packer Detected)' : 'NO'}\n` +
+                    `  Valid PE Header: ${d.is_pe ? 'YES (MZ Signature Present)' : 'NO'}\n` +
                     `  Suspicious APIs Found: ${d.suspicious_imports_found.join(', ') || 'None'}\n` +
                     `  Highlights: ${d.behavioral_highlights.join(' ')}`;
             }
@@ -1363,16 +1325,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Interactive DNS Threat Sinkhole Inspector
-    const dnsPreset = document.getElementById('suite-dns-preset-select');
-    if (dnsPreset) {
-        dnsPreset.addEventListener('change', (e) => {
-            if (e.target.value) document.getElementById('suite-dns-input').value = e.target.value;
-        });
-    }
-
     document.getElementById('btn-suite-dns-query')?.addEventListener('click', async () => {
-        const domain = document.getElementById('suite-dns-input').value || 'example.com';
+        const domain = document.getElementById('suite-dns-input').value.trim();
         const out = document.getElementById('suite-dns-output');
+        if (!domain) {
+            alert("Please enter a domain name to query.");
+            return;
+        }
         if (out) out.innerText = `[+] Querying LurkDNS Sinkhole for '${domain}'...`;
 
         try {

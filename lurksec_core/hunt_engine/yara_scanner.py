@@ -10,11 +10,11 @@ class YaraScanner:
     SIGNATURES = [
         {
             "id": "YARA-001",
-            "name": "Cobalt_Strike_Reflective_Loader",
+            "name": "Reflective_DLL_Injection_Loader",
             "type": "HEX_AND_STRING",
             "severity": "CRITICAL",
             "pattern": r"(?i)(ReflectiveLoader|BeaconGetSpawn|4d5a900003000000)",
-            "description": "Matches Cobalt Strike reflective loader export and header signatures."
+            "description": "Matches generic reflective DLL injection loader export and header signatures."
         },
         {
             "id": "YARA-002",

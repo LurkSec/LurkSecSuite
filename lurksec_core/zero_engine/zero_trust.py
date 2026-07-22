@@ -16,28 +16,7 @@ class ZeroTrustEngine:
     ]
 
     def __init__(self):
-        self.access_logs = [
-            {
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "user": "secops_admin@lurksec.io",
-                "device_id": "DEV-WIN11-098",
-                "mtls_status": "VALID",
-                "posture_score": 95,
-                "access_granted": True,
-                "resource": "https://internal-soar.lurksec.io/api",
-                "severity": "PASS"
-            },
-            {
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "user": "untrusted_contractor@external.com",
-                "device_id": "DEV-UNKNOWN-77",
-                "mtls_status": "EXPIRED_CERT",
-                "posture_score": 40,
-                "access_granted": False,
-                "resource": "https://vault.lurksec.io/secrets",
-                "severity": "HIGH"
-            }
-        ]
+        self.access_logs: List[Dict[str, Any]] = []
 
     def verify_access(self, user: str, device_id: str, resource: str, mtls_valid: bool = True) -> Dict[str, Any]:
         now = time.strftime("%Y-%m-%d %H:%M:%S")

@@ -8,36 +8,7 @@ class CaseManager:
     """
 
     def __init__(self):
-        self.cases: List[Dict[str, Any]] = [
-            {
-                "case_id": "CASE-2026-001",
-                "title": "Unusual PowerShell Execution in %TEMP%",
-                "severity": "HIGH",
-                "status": "IN_PROGRESS",
-                "assigned_to": "Analyst Lurk",
-                "created_at": time.strftime('%Y-%m-%d %H:%M:%S'),
-                "description": "LurkTrace detected obfuscated PowerShell command executing from C:\\Users\\...\\AppData\\Local\\Temp.",
-                "evidence": ["Process PID: 4876", "Parent PID: 1204 (explorer.exe)", "Encoded Base64 Payload"],
-                "timeline": [
-                    {"time": time.strftime('%Y-%m-%d %H:%M:%S'), "event": "Case automatically opened by LurkSOC aggregator."},
-                    {"time": time.strftime('%Y-%m-%d %H:%M:%S'), "event": "Playbook PB-002 executed. Process terminated & binary quarantined."}
-                ]
-            },
-            {
-                "case_id": "CASE-2026-002",
-                "title": "Multiple Failed Authentication Spikes",
-                "severity": "MEDIUM",
-                "status": "RESOLVED",
-                "assigned_to": "SOC Auto-Bot",
-                "created_at": time.strftime('%Y-%m-%d %H:%M:%S'),
-                "description": "LurkSIEM logged 14 failed logon attempts (Event 4625) targeting Administrator.",
-                "evidence": ["Target IP: 192.168.1.105", "Event ID: 4625", "Failure Code: 0xc000006d"],
-                "timeline": [
-                    {"time": time.strftime('%Y-%m-%d %H:%M:%S'), "event": "Case created via SIEM correlation trigger."},
-                    {"time": time.strftime('%Y-%m-%d %H:%M:%S'), "event": "Playbook PB-001 executed. IP blocked in Firewall."}
-                ]
-            }
-        ]
+        self.cases: List[Dict[str, Any]] = []
 
     def get_cases(self) -> List[Dict[str, Any]]:
         return self.cases

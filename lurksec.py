@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import socket
 import sys
 import time
 import traceback
@@ -65,22 +66,7 @@ ZERO_ENGINE = ZeroTrustEngine()
 VULN_ENGINE = VulnerabilityScanner()
 SAND_ENGINE = MalwareSandbox()
 GUARD_ENGINE = ITDRAuditor()
-HUNT_HITS = [
-    {
-        "rule_id": "SIGMA-001",
-        "title": "Obfuscated / Base64 Encoded PowerShell Command",
-        "severity": "HIGH",
-        "source": "Process Command Line (PID 4876)",
-        "matched_sample": "powershell.exe -NoP -NonI -W Hidden -Enc SUVYICgoTmV3LU9iamVjdCBOZXQuV2ViQ2xpZW50KS5Eb3dubG9hZFN0cmluZygnLi4uJykp"
-    },
-    {
-        "sig_id": "YARA-001",
-        "sig_name": "Cobalt_Strike_Reflective_Loader",
-        "severity": "CRITICAL",
-        "source": "Process Memory (PID 644)",
-        "matched_sample": "4d5a900003000000...ReflectiveLoader"
-    }
-]
+HUNT_HITS = []
 
 class LurkSecHandler(SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
@@ -330,43 +316,18 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 self.send_json(GUARD_ENGINE.audit_identity_threats())
 
             elif path == "/api/simulate":
-                sim_type = params.get("type", ["ransomware"])[0]
+                sim_type = params.get("type", ["rescan"])[0]
                 now_str = time.strftime("%Y-%m-%d %H:%M:%S")
 
-                if sim_type == "ransomware":
-                    hit = {
-                        "rule_id": "SIGMA-008",
-                        "title": "Volume Shadow Copy Deletion (Ransomware Test Injection)",
-                        "category": "Impact",
-                        "severity": "CRITICAL",
-                        "source": "SOC Telemetry Generator",
-                        "matched_sample": "vssadmin.exe delete shadows /all /quiet"
-                    }
-                    HUNT_HITS.insert(0, hit)
-                    SOAR_CASES.create_case("Simulated Ransomware VSS Deletion Detected", "High-severity shadow copy deletion injected via SOC Telemetry Validation Tester.", "CRITICAL", "LurkSOAR Engine")
-                    self.send_json({"success": True, "message": "Injected Ransomware VSS Deletion Telemetry. LurkHunt Hit & LurkSOAR Case Spawned."})
+                procs = ProcessAuditor.get_live_processes()
+                proc_alerts = ProcessAuditor.evaluate_anomalies(procs)
+                id_audit = GUARD_ENGINE.audit_identity_threats()
+                vuln_audit = VULN_ENGINE.audit_system_vulnerabilities()
 
-                elif sim_type == "waf_sqli":
-                    WAF_BLOCK_LOG.insert(0, {
-                        "timestamp": now_str,
-                        "rule_matched": "RULE-WAF-001 (SQL Injection Pattern 'UNION SELECT')",
-                        "ip": "198.51.100.44",
-                        "uri": "/api/users?id=1%20UNION%20SELECT%20username,password%20FROM%20users"
-                    })
-                    self.send_json({"success": True, "message": "Injected WAF SQLi Payload Telemetry. Logged into LurkShield Block Log."})
-
-                else: # honeypot
-                    DECOY_MANAGER.get_summary()["intrusions"].insert(0, {
-                        "probe_id": "999",
-                        "timestamp": now_str,
-                        "service": "SSH-Honeypot",
-                        "target_port": 2222,
-                        "source_ip": "203.0.113.88",
-                        "origin": "Remote Probe",
-                        "payload": "root:admin1234",
-                        "severity": "HIGH"
-                    })
-                    self.send_json({"success": True, "message": "Injected Honeypot Deception Probe Telemetry into LurkDecoy."})
+                self.send_json({
+                    "success": True,
+                    "message": f"Real-time system telemetry rescan executed at {now_str}. Evaluated {len(procs)} processes, {len(vuln_audit.get('findings', []))} vulnerability baselines, and {len(id_audit.get('findings', []))} identity checks."
+                })
 
             elif path == "/api/report/json":
                 summary = self.get_master_summary()
@@ -435,7 +396,6 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
         process_alerts = ProcessAuditor.evaluate_anomalies(processes)
         audit_summary = SystemAuditor.audit_os_hardening()
 
-        # Auto-scan live processes against SIGMA & YARA rules
         for p in processes:
             cmd = p.get("command_line", "") or p.get("name", "")
             if cmd:
@@ -534,15 +494,53 @@ def main():
         for inc in soc["incidents"]:
             if inc["severity"] in ["HIGH", "MEDIUM"]:
                 print(f"  [{inc['engine']}] ({inc['severity']}) {inc['title']} | Evidence: {inc['evidence']}")
-    else:
-        server_address = ("", args.port)
+class DualStackServer(ThreadingHTTPServer):
+    address_family = socket.AF_INET6
+
+    def server_bind(self):
         try:
-            httpd = ThreadingHTTPServer(server_address, LurkSecHandler)
-        except OSError as e:
-            print(f"[-] Failed to bind port {args.port}: {e}")
-            sys.exit(1)
+            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+        except Exception:
+            pass
+        super().server_bind()
+
+def main():
+    parser = argparse.ArgumentParser(description="LurkSec Unified Security Operations Suite Server")
+    parser.add_argument("action", nargs="?", default="serve", choices=["serve", "audit"])
+    parser.add_argument("--port", type=int, default=8000)
+    args = parser.parse_args()
+
+    if args.action == "audit":
+        print("[*] Running Master LurkSec Security Audit across all engines...")
+        host = SystemNetworkInfo.get_host_details()
+        sockets = SystemNetworkInfo.get_network_sockets()
+        events = SIEMLogParser.get_real_events(30)
+        siem_alerts = SIEMCorrelator(events).evaluate_rules()
+        decoy = DECOY_MANAGER.get_summary()
+        pkts = PacketInspector.capture_live_packets(10)
+        pkt_alerts = PacketInspector.evaluate_threats(pkts)
+        procs = ProcessAuditor.get_live_processes()
+        proc_alerts = ProcessAuditor.evaluate_anomalies(procs)
+        audit = SystemAuditor.audit_os_hardening()
+
+        soc = SOCAggregator.aggregate_incidents(sockets, siem_alerts, decoy, pkt_alerts, proc_alerts, audit)
+        print(f"[+] Master Audit Complete. Correlated Incidents: {soc['total_incidents']} (High Risk: {soc['severity_counts']['HIGH']}).")
+        print(f"[+] OS Hardening Compliance Score: {audit['score']}%")
+        for inc in soc["incidents"]:
+            if inc["severity"] in ["HIGH", "MEDIUM"]:
+                print(f"  [{inc['engine']}] ({inc['severity']}) {inc['title']} | Evidence: {inc['evidence']}")
+    else:
+        try:
+            httpd = DualStackServer(("::", args.port), LurkSecHandler)
+        except Exception:
+            try:
+                httpd = ThreadingHTTPServer(("0.0.0.0", args.port), LurkSecHandler)
+            except OSError as e:
+                print(f"[-] Failed to bind port {args.port}: {e}")
+                sys.exit(1)
+
         url = f"http://localhost:{args.port}"
-        print(f"[+] LurkSec Master Console listening on {url}")
+        print(f"[+] LurkSec Master Console listening on {url} (IPv4 & IPv6 Dual-Stack)")
         webbrowser.open(url)
         try:
             httpd.serve_forever()
