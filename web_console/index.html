@@ -32,7 +32,7 @@
         </header>
 
         <div class="app-body">
-            <!-- Sidebar Navigation with Clean SVG Icons -->
+            <!-- Sidebar Navigation -->
             <nav class="app-sidebar">
                 <!-- 1. LurkSOC Parent -->
                 <div class="nav-group open">
@@ -46,7 +46,20 @@
                     </div>
                 </div>
 
-                <!-- 2. LurkSentinel Parent -->
+                <!-- NEW 2. LurkEDR Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="edr">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>LurkEDR Agent</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#edr-actions" class="nav-sub-btn" data-tab="edr-actions">Response Actions</a>
+                        <a href="#edr-logs" class="nav-sub-btn" data-tab="edr-logs">Action Logs & Vault</a>
+                    </div>
+                </div>
+
+                <!-- 3. LurkSentinel Parent -->
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="sentinel">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
@@ -59,7 +72,7 @@
                     </div>
                 </div>
 
-                <!-- 3. LurkSIEM Parent -->
+                <!-- 4. LurkSIEM Parent -->
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="siem">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -72,7 +85,7 @@
                     </div>
                 </div>
 
-                <!-- 4. LurkDecoy Parent -->
+                <!-- 5. LurkDecoy Parent -->
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="decoy">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
@@ -85,7 +98,7 @@
                     </div>
                 </div>
 
-                <!-- 5. LurkPacket Parent -->
+                <!-- 6. LurkPacket Parent -->
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="packet">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -98,7 +111,7 @@
                     </div>
                 </div>
 
-                <!-- 6. LurkTrace Parent -->
+                <!-- 7. LurkTrace Parent -->
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="trace">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M10 7h4v11h-4"/></svg>
@@ -111,7 +124,7 @@
                     </div>
                 </div>
 
-                <!-- 7. LurkAudit Parent -->
+                <!-- 8. LurkAudit Parent -->
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="audit">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
@@ -123,7 +136,7 @@
                     </div>
                 </div>
 
-                <!-- 8. Master Reports Parent -->
+                <!-- 9. Master Reports Parent -->
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="reports">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -142,7 +155,7 @@
                 <section id="tab-soc-overview" class="tab-page active">
                     <div class="section-title">
                         <h2>LurkSOC - Master Threat Feed</h2>
-                        <span class="section-subtitle">Real-time cross-engine incident correlation across Network, SIEM, Decoys, PCAP, Processes, and OS Hardening</span>
+                        <span class="section-subtitle">Real-time cross-engine incident correlation across Network, SIEM, Decoys, PCAP, Processes, OS Hardening, and EDR</span>
                     </div>
 
                     <div class="summary-grid">
@@ -163,8 +176,8 @@
                         </div>
                         <div class="summary-card">
                             <span class="card-label">ACTIVE ENGINES</span>
-                            <div class="card-value" style="color:#3fb950;font-size:16px;margin-top:6px;">6 ENGINES ONLINE</div>
-                            <span class="card-sub">Full Suite Monitored</span>
+                            <div class="card-value" style="color:#3fb950;font-size:16px;margin-top:6px;">7 ENGINES ONLINE</div>
+                            <span class="card-sub">Full Suite + EDR Monitored</span>
                         </div>
                     </div>
 
@@ -191,7 +204,105 @@
                     </div>
                 </section>
 
-                <!-- PAGE 2: LURKSENTINEL NETWORK SOCKETS -->
+                <!-- PAGE 2: LURKEDR RESPONSE ACTIONS -->
+                <section id="tab-edr-actions" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkEDR - Threat Response & Containment</h2>
+                        <span class="section-subtitle">Execute process tree termination, dynamic firewall IP containment, binary file quarantine, and memory carving</span>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+                        <!-- Action 1: Kill Process -->
+                        <div class="panel-box">
+                            <div class="panel-header">Process Tree Termination</div>
+                            <div style="padding:16px;">
+                                <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Target Process ID (PID):</label>
+                                <input type="number" id="input-suite-kill-pid" class="filter-input" style="width:100%;margin-bottom:10px;" placeholder="e.g. 4876">
+                                <button id="btn-suite-kill" class="btn btn-primary" style="width:100%;background:#f85149;border-color:#f85149;">Terminate Process Tree</button>
+                            </div>
+                        </div>
+
+                        <!-- Action 2: Firewall Block IP -->
+                        <div class="panel-box">
+                            <div class="panel-header">Windows Firewall IP Containment</div>
+                            <div style="padding:16px;">
+                                <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Remote Target IP Address:</label>
+                                <input type="text" id="input-suite-block-ip" class="filter-input" style="width:100%;margin-bottom:10px;" placeholder="e.g. 185.220.101.5">
+                                <button id="btn-suite-block" class="btn btn-primary" style="width:100%;background:#d29922;border-color:#d29922;">Block IP in Windows Firewall</button>
+                            </div>
+                        </div>
+
+                        <!-- Action 3: Quarantine File -->
+                        <div class="panel-box">
+                            <div class="panel-header">Binary File Quarantine Vault</div>
+                            <div style="padding:16px;">
+                                <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Full File Path:</label>
+                                <input type="text" id="input-suite-quarantine-path" class="filter-input" style="width:100%;margin-bottom:10px;" placeholder="e.g. C:\Users\Public\malware.exe">
+                                <button id="btn-suite-quarantine" class="btn btn-primary" style="width:100%;">Quarantine File to Vault</button>
+                            </div>
+                        </div>
+
+                        <!-- Action 4: Memory Carver -->
+                        <div class="panel-box">
+                            <div class="panel-header">Process Memory & String Artifact Carver</div>
+                            <div style="padding:16px;">
+                                <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Target Process ID (PID):</label>
+                                <input type="number" id="input-suite-carve-pid" class="filter-input" style="width:100%;margin-bottom:10px;" placeholder="e.g. 1240">
+                                <button id="btn-suite-carve" class="btn btn-outline" style="width:100%;">Carve Process IOC Strings</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header">EDR Action Output Console</div>
+                        <div class="report-box" style="padding:12px;">
+                            <pre id="suite-edr-output" style="color:#58a6ff;">Execute an EDR response action above to contain target threats...</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 3: LURKEDR LOGS & VAULT -->
+                <section id="tab-edr-logs" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkEDR - Containment Action Logs & Quarantine Vault</h2>
+                        <span class="section-subtitle">Audit trail of containment actions and isolated vault binaries</span>
+                    </div>
+
+                    <div class="panel-box" style="margin-bottom:20px;">
+                        <div class="panel-header">Containment Action History</div>
+                        <table class="raw-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-time">Timestamp</th>
+                                    <th class="col-proto">Action Type</th>
+                                    <th class="col-ip">Target</th>
+                                    <th class="col-id">Status</th>
+                                    <th class="col-msg">Action Response Message</th>
+                                </tr>
+                            </thead>
+                            <tbody id="suite-edr-logs-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header">Quarantine Vault Inventory</div>
+                        <table class="raw-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-time">Quarantine Date</th>
+                                    <th class="col-proc">Filename</th>
+                                    <th class="col-id">Size (Bytes)</th>
+                                    <th class="col-msg">Vault System Path</th>
+                                </tr>
+                            </thead>
+                            <tbody id="suite-edr-vault-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PAGE 4: LURKSENTINEL NETWORK SOCKETS -->
                 <section id="tab-sentinel-sockets" class="tab-page">
                     <div class="section-title">
                         <h2>LurkSentinel - Active Network Sockets</h2>
@@ -226,7 +337,7 @@
                     </div>
                 </section>
 
-                <!-- PAGE 3: LURKSENTINEL PORT SCANNER -->
+                <!-- PAGE 5: LURKSENTINEL PORT SCANNER -->
                 <section id="tab-sentinel-portscan" class="tab-page">
                     <div class="section-title">
                         <h2>LurkSentinel - TCP Port Scanner</h2>
@@ -244,7 +355,7 @@
                     </div>
                 </section>
 
-                <!-- PAGE 4: LURKSIEM EVENT STREAM -->
+                <!-- PAGE 6: LURKSIEM EVENT STREAM -->
                 <section id="tab-siem-events" class="tab-page">
                     <div class="section-title">
                         <h2>LurkSIEM - Windows Event Log Stream</h2>
@@ -279,7 +390,7 @@
                     </div>
                 </section>
 
-                <!-- PAGE 5: LURKSIEM ALERTS -->
+                <!-- PAGE 7: LURKSIEM ALERTS -->
                 <section id="tab-siem-alerts" class="tab-page">
                     <div class="section-title">
                         <h2>LurkSIEM - Threat Correlation Alerts</h2>
@@ -290,7 +401,7 @@
                     </div>
                 </section>
 
-                <!-- PAGE 6: LURKDECOY CAPTURED PROBES -->
+                <!-- PAGE 8: LURKDECOY CAPTURED PROBES -->
                 <section id="tab-decoy-probes" class="tab-page">
                     <div class="section-title">
                         <h2>LurkDecoy - Captured Intrusion Probes</h2>
@@ -325,7 +436,7 @@
                     </div>
                 </section>
 
-                <!-- PAGE 7: LURKDECOY LISTENERS -->
+                <!-- PAGE 9: LURKDECOY LISTENERS -->
                 <section id="tab-decoy-status" class="tab-page">
                     <div class="section-title">
                         <h2>LurkDecoy - Active Honeypot Ports</h2>
@@ -340,7 +451,7 @@
                     </div>
                 </section>
 
-                <!-- PAGE 8: LURKPACKET STREAM & PCAP -->
+                <!-- PAGE 10: LURKPACKET STREAM & PCAP -->
                 <section id="tab-packet-stream" class="tab-page">
                     <div class="section-title">
                         <h2>LurkPacket - Packet Stream & PCAP Export</h2>
@@ -372,7 +483,7 @@
                     </div>
                 </section>
 
-                <!-- PAGE 9: LURKPACKET PROTOCOL INSPECTOR -->
+                <!-- PAGE 11: LURKPACKET PROTOCOL INSPECTOR -->
                 <section id="tab-packet-inspector" class="tab-page">
                     <div class="section-title">
                         <h2>LurkPacket - Protocol Inspector</h2>
@@ -397,7 +508,7 @@
                     </div>
                 </section>
 
-                <!-- PAGE 10: LURKTRACE PROCESSES -->
+                <!-- PAGE 12: LURKTRACE PROCESSES -->
                 <section id="tab-trace-procs" class="tab-page">
                     <div class="section-title">
                         <h2>LurkTrace - Windows Process Stream</h2>
@@ -432,7 +543,7 @@
                     </div>
                 </section>
 
-                <!-- PAGE 11: LURKTRACE PROCESS TREE -->
+                <!-- PAGE 13: LURKTRACE PROCESS TREE -->
                 <section id="tab-trace-tree" class="tab-page">
                     <div class="section-title">
                         <h2>LurkTrace - Parent-Child Process Tree</h2>
@@ -447,7 +558,7 @@
                     </div>
                 </section>
 
-                <!-- PAGE 12: LURKAUDIT OS HARDENING CHECKS -->
+                <!-- PAGE 14: LURKAUDIT OS HARDENING CHECKS -->
                 <section id="tab-audit-checks" class="tab-page">
                     <div class="section-title">
                         <h2>LurkAudit - OS Hardening Baseline Checks</h2>
@@ -465,7 +576,7 @@
                     </div>
                 </section>
 
-                <!-- PAGE 13: MASTER REPORTS -->
+                <!-- PAGE 15: MASTER REPORTS -->
                 <section id="tab-reports-export" class="tab-page">
                     <div class="section-title">
                         <h2>Master Executive Reports</h2>

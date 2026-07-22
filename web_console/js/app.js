@@ -1,4 +1,4 @@
-// Master LurkSec Suite Unified Controller with Per-Module Exports
+// Master LurkSec Suite Unified Controller with EDR Controls
 
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
@@ -22,7 +22,6 @@ function initNavigation() {
     const subBtns = document.querySelectorAll('.nav-sub-btn');
     const tabPages = document.querySelectorAll('.tab-page');
 
-    // 1. Parent Button Toggle (Dropdowns are OPEN by default)
     parentBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -40,7 +39,6 @@ function initNavigation() {
         });
     });
 
-    // 2. Sub-Item Page Selection
     subBtns.forEach(sub => {
         sub.addEventListener('click', (e) => {
             e.preventDefault();
@@ -97,6 +95,7 @@ function renderDashboard() {
 
     renderSOCChart();
     renderSOCFeed();
+    renderEDRLogs();
     renderSocketsTable();
     renderSIEMTable();
     renderSIEMAlerts();
@@ -121,6 +120,7 @@ function renderSOCChart() {
     const packetCount = (data.packet_alerts ? data.packet_alerts.alerts || [] : []).length;
     const traceCount = (data.process_alerts ? data.process_alerts.alerts || [] : []).length;
     const auditCount = (data.audit ? data.audit.audits || [] : []).filter(a => a.status !== 'PASS').length;
+    const edrCount = (data.edr ? data.edr.action_logs || [] : []).length;
 
     const ctxSoc = socElem.getContext('2d');
     if (state.socChart) state.socChart.destroy();
@@ -128,11 +128,11 @@ function renderSOCChart() {
     state.socChart = new Chart(ctxSoc, {
         type: 'bar',
         data: {
-            labels: ['LurkSentinel', 'LurkSIEM', 'LurkDecoy', 'LurkPacket', 'LurkTrace', 'LurkAudit'],
+            labels: ['LurkEDR', 'LurkSentinel', 'LurkSIEM', 'LurkDecoy', 'LurkPacket', 'LurkTrace', 'LurkAudit'],
             datasets: [{
                 label: 'Correlated Threat Incidents',
-                data: [sentinelCount, siemCount, decoyCount, packetCount, traceCount, auditCount],
-                backgroundColor: ['#58a6ff', '#d29922', '#f85149', '#a371f7', '#3fb950', '#f0883e']
+                data: [edrCount, sentinelCount, siemCount, decoyCount, packetCount, traceCount, auditCount],
+                backgroundColor: ['#f85149', '#58a6ff', '#d29922', '#f85149', '#a371f7', '#3fb950', '#f0883e']
             }]
         },
         options: {
@@ -173,6 +173,52 @@ function renderSOCFeed(filteredIncidents = null) {
         `;
         container.appendChild(div);
     });
+}
+
+function renderEDRLogs() {
+    const logsTbody = document.getElementById('suite-edr-logs-tbody');
+    const vaultTbody = document.getElementById('suite-edr-vault-tbody');
+    const edr = state.masterData.edr || {};
+
+    if (logsTbody) {
+        logsTbody.innerHTML = '';
+        const logs = edr.action_logs || [];
+        if (logs.length === 0) {
+            logsTbody.innerHTML = `<tr><td colspan="5" style="color:#8b949e;">No containment actions logged.</td></tr>`;
+        } else {
+            logs.forEach(l => {
+                const tr = document.createElement('tr');
+                const color = l.success ? '#3fb950' : '#f85149';
+                tr.innerHTML = `
+                    <td><code>${l.timestamp}</code></td>
+                    <td><strong style="color:#58a6ff;">${l.action_type}</strong></td>
+                    <td><code>${l.target}</code></td>
+                    <td><strong style="color:${color};">${l.success ? 'SUCCESS' : 'FAILED'}</strong></td>
+                    <td>${l.message}</td>
+                `;
+                logsTbody.appendChild(tr);
+            });
+        }
+    }
+
+    if (vaultTbody) {
+        vaultTbody.innerHTML = '';
+        const vault = edr.quarantined_files || [];
+        if (vault.length === 0) {
+            vaultTbody.innerHTML = `<tr><td colspan="4" style="color:#8b949e;">Quarantine vault is empty.</td></tr>`;
+        } else {
+            vault.forEach(v => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code>${v.quarantined_time}</code></td>
+                    <td><strong style="color:#f85149;">${v.filename}</strong></td>
+                    <td><code>${v.size_bytes}</code></td>
+                    <td><code>${v.vault_path}</code></td>
+                `;
+                vaultTbody.appendChild(tr);
+            });
+        }
+    }
 }
 
 function renderSocketsTable(filteredSockets = null) {
@@ -405,6 +451,73 @@ function setupSorting() {
 }
 
 function setupEventListeners() {
+    const outputConsole = document.getElementById('suite-edr-output');
+
+    // LurkEDR Suite Action Handlers
+    const btnKill = document.getElementById('btn-suite-kill');
+    if (btnKill) {
+        btnKill.addEventListener('click', async () => {
+            const pidVal = document.getElementById('input-suite-kill-pid').value;
+            if (!pidVal) { alert("Please enter a target PID."); return; }
+
+            outputConsole.innerText = `[+] Executing EDR Process Termination for PID ${pidVal}...`;
+            try {
+                const res = await fetch(`/api/edr/kill?pid=${pidVal}`);
+                const result = await res.json();
+                outputConsole.innerText = JSON.stringify(result, null, 2);
+                await loadMasterData();
+            } catch (e) { outputConsole.innerText = `[-] Error: ${e.message}`; }
+        });
+    }
+
+    const btnBlock = document.getElementById('btn-suite-block');
+    if (btnBlock) {
+        btnBlock.addEventListener('click', async () => {
+            const ipVal = document.getElementById('input-suite-block-ip').value;
+            if (!ipVal) { alert("Please enter a target remote IP address."); return; }
+
+            outputConsole.innerText = `[+] Executing Windows Firewall Block for IP ${ipVal}...`;
+            try {
+                const res = await fetch(`/api/edr/block?ip=${encodeURIComponent(ipVal)}`);
+                const result = await res.json();
+                outputConsole.innerText = JSON.stringify(result, null, 2);
+                await loadMasterData();
+            } catch (e) { outputConsole.innerText = `[-] Error: ${e.message}`; }
+        });
+    }
+
+    const btnQuarantine = document.getElementById('btn-suite-quarantine');
+    if (btnQuarantine) {
+        btnQuarantine.addEventListener('click', async () => {
+            const pathVal = document.getElementById('input-suite-quarantine-path').value;
+            if (!pathVal) { alert("Please enter a target file path."); return; }
+
+            outputConsole.innerText = `[+] Quarantining binary '${pathVal}' to vault...`;
+            try {
+                const res = await fetch(`/api/edr/quarantine?path=${encodeURIComponent(pathVal)}`);
+                const result = await res.json();
+                outputConsole.innerText = JSON.stringify(result, null, 2);
+                await loadMasterData();
+            } catch (e) { outputConsole.innerText = `[-] Error: ${e.message}`; }
+        });
+    }
+
+    const btnCarve = document.getElementById('btn-suite-carve');
+    if (btnCarve) {
+        btnCarve.addEventListener('click', async () => {
+            const pidVal = document.getElementById('input-suite-carve-pid').value;
+            if (!pidVal) { alert("Please enter a target PID."); return; }
+
+            outputConsole.innerText = `[+] Carving memory strings for PID ${pidVal}...`;
+            try {
+                const res = await fetch(`/api/edr/carve?pid=${pidVal}`);
+                const result = await res.json();
+                outputConsole.innerText = JSON.stringify(result, null, 2);
+                await loadMasterData();
+            } catch (e) { outputConsole.innerText = `[-] Error: ${e.message}`; }
+        });
+    }
+
     const btnScanPort = document.getElementById('btn-run-portscan');
     if (btnScanPort) {
         btnScanPort.addEventListener('click', async () => {
@@ -423,9 +536,8 @@ function setupEventListeners() {
                     });
                     container.innerHTML = html;
                 }
-            } catch (e) {
-                console.error(e);
-            } finally {
+            } catch (e) { console.error(e); }
+            finally {
                 btnScanPort.disabled = false;
                 btnScanPort.innerText = 'Execute 150-Thread Port Scan';
             }
@@ -468,119 +580,47 @@ function setupEventListeners() {
         });
     }
 
-    // --- PER-MODULE EXPORT BUTTON HANDLERS ---
-    
-    // LurkSOC Exports
+    // Per-Module Exports
     const btnSocJson = document.getElementById('btn-export-soc-json');
     if (btnSocJson) {
         btnSocJson.addEventListener('click', () => {
-            const data = state.masterData.soc_incidents || {};
-            downloadFile(JSON.stringify(data, null, 2), 'LurkSOC_Incidents.json', 'application/json');
-        });
-    }
-    const btnSocMd = document.getElementById('btn-export-soc-md');
-    if (btnSocMd) {
-        btnSocMd.addEventListener('click', () => {
-            const incidents = (state.masterData.soc_incidents || {}).incidents || [];
-            let md = `# LurkSOC Master Incident Feed\n\n`;
-            incidents.forEach(inc => {
-                md += `### [${inc.severity}] ${inc.engine}: ${inc.title}\n`;
-                md += `- Incident ID: ${inc.incident_id}\n- Category: ${inc.category}\n- Evidence: ${inc.evidence}\n\n`;
-            });
-            downloadFile(md, 'LurkSOC_Incidents.md', 'text/markdown');
+            downloadFile(JSON.stringify(state.masterData.soc_incidents || {}, null, 2), 'LurkSOC_Incidents.json', 'application/json');
         });
     }
 
-    // LurkSentinel Exports
     const btnSockJson = document.getElementById('btn-export-sockets-json');
     if (btnSockJson) {
         btnSockJson.addEventListener('click', () => {
             downloadFile(JSON.stringify(state.masterData.sockets || [], null, 2), 'LurkSentinel_Sockets.json', 'application/json');
         });
     }
-    const btnSockCsv = document.getElementById('btn-export-sockets-csv');
-    if (btnSockCsv) {
-        btnSockCsv.addEventListener('click', () => {
-            const sockets = state.masterData.sockets || [];
-            let csv = "ID,Protocol,LocalAddress,ForeignAddress,Origin,ProcessName\n";
-            sockets.forEach(s => {
-                csv += `"${s.id}","${s.protocol}","${s.local_address}","${s.foreign_address}","${s.origin}","${s.process_name}"\n`;
-            });
-            downloadFile(csv, 'LurkSentinel_Sockets.csv', 'text/csv');
-        });
-    }
 
-    // LurkSIEM Exports
     const btnSiemJson = document.getElementById('btn-export-siem-json');
     if (btnSiemJson) {
         btnSiemJson.addEventListener('click', () => {
             downloadFile(JSON.stringify(state.masterData.siem_events || [], null, 2), 'LurkSIEM_Events.json', 'application/json');
         });
     }
-    const btnSiemCsv = document.getElementById('btn-export-siem-csv');
-    if (btnSiemCsv) {
-        btnSiemCsv.addEventListener('click', () => {
-            const events = state.masterData.siem_events || [];
-            let csv = "Timestamp,EventID,LogName,Provider,User,Message\n";
-            events.forEach(e => {
-                csv += `"${e.timestamp}","${e.event_id}","${e.log_name}","${e.provider}","${e.user}","${e.message.replace(/"/g, '""')}"\n`;
-            });
-            downloadFile(csv, 'LurkSIEM_Events.csv', 'text/csv');
-        });
-    }
 
-    // LurkDecoy Exports
     const btnDecoyJson = document.getElementById('btn-export-decoy-json');
     if (btnDecoyJson) {
         btnDecoyJson.addEventListener('click', () => {
-            const decoy = state.masterData.decoy_summary || {};
-            downloadFile(JSON.stringify(decoy, null, 2), 'LurkDecoy_Probes.json', 'application/json');
-        });
-    }
-    const btnDecoyCsv = document.getElementById('btn-export-decoy-csv');
-    if (btnDecoyCsv) {
-        btnDecoyCsv.addEventListener('click', () => {
-            const intrusions = (state.masterData.decoy_summary || {}).intrusions || [];
-            let csv = "ProbeID,Timestamp,Port,Service,AttackerIP,Origin,Payload\n";
-            intrusions.forEach(i => {
-                csv += `"${i.probe_id}","${i.timestamp}","${i.target_port}","${i.service}","${i.source_ip}","${i.origin}","${i.payload.replace(/"/g, '""')}"\n`;
-            });
-            downloadFile(csv, 'LurkDecoy_Probes.csv', 'text/csv');
+            downloadFile(JSON.stringify(state.masterData.decoy_summary || {}, null, 2), 'LurkDecoy_Probes.json', 'application/json');
         });
     }
 
-    // LurkPacket Exports
     const btnExportPcap = document.getElementById('btn-export-pcap');
     if (btnExportPcap) {
         btnExportPcap.addEventListener('click', () => window.open('/api/pcap', '_blank'));
     }
-    const btnPktJson = document.getElementById('btn-export-packet-json');
-    if (btnPktJson) {
-        btnPktJson.addEventListener('click', () => {
-            downloadFile(JSON.stringify(state.masterData.packets || [], null, 2), 'LurkPacket_Packets.json', 'application/json');
-        });
-    }
 
-    // LurkTrace Exports
     const btnTraceJson = document.getElementById('btn-export-trace-json');
     if (btnTraceJson) {
         btnTraceJson.addEventListener('click', () => {
             downloadFile(JSON.stringify(state.masterData.processes || [], null, 2), 'LurkTrace_Processes.json', 'application/json');
         });
     }
-    const btnTraceCsv = document.getElementById('btn-export-trace-csv');
-    if (btnTraceCsv) {
-        btnTraceCsv.addEventListener('click', () => {
-            const procs = state.masterData.processes || [];
-            let csv = "PID,PPID,Name,ParentName,Path,CommandLine\n";
-            procs.forEach(p => {
-                csv += `"${p.pid}","${p.ppid}","${p.name}","${p.parent_name}","${p.path}","${p.cmdline.replace(/"/g, '""')}"\n`;
-            });
-            downloadFile(csv, 'LurkTrace_Processes.csv', 'text/csv');
-        });
-    }
 
-    // LurkAudit Exports
     const btnAuditJson = document.getElementById('btn-export-audit-json');
     if (btnAuditJson) {
         btnAuditJson.addEventListener('click', () => {
@@ -588,7 +628,6 @@ function setupEventListeners() {
         });
     }
 
-    // Master Report Exports
     const btnGenMarkdown = document.getElementById('btn-gen-markdown');
     if (btnGenMarkdown) {
         btnGenMarkdown.addEventListener('click', async () => {
