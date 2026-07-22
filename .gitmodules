@@ -1,0 +1,30 @@
+[submodule "lurkdecoy-security-engine"]
+	path = lurkdecoy-security-engine
+	url = https://github.com/LurkSec/lurkdecoy-security-engine.git
+[submodule "lurkedr-security-engine"]
+	path = lurkedr-security-engine
+	url = https://github.com/LurkSec/lurkedr-security-engine.git
+[submodule "lurkpacket-security-engine"]
+	path = lurkpacket-security-engine
+	url = https://github.com/LurkSec/lurkpacket-security-engine.git
+[submodule "lurksiem-security-engine"]
+	path = lurksiem-security-engine
+	url = https://github.com/LurkSec/lurksiem-security-engine.git
+[submodule "lurktrace-security-engine"]
+	path = lurktrace-security-engine
+	url = https://github.com/LurkSec/lurktrace-security-engine.git
+[submodule "netsentinel-security-suite"]
+	path = netsentinel-security-suite
+	url = https://github.com/LurkSec/netsentinel-security-suite.git
+[submodule "lurkshield-security-engine"]
+	path = lurkshield-security-engine
+	url = https://github.com/LurkSec/lurkshield.git
+[submodule "lurkintel-security-engine"]
+	path = lurkintel-security-engine
+	url = https://github.com/LurkSec/lurkintel.git
+[submodule "lurkidentity-security-engine"]
+	path = lurkidentity-security-engine
+	url = https://github.com/LurkSec/lurkidentity.git
+[submodule "lurkcloud-security-engine"]
+	path = lurkcloud-security-engine
+	url = https://github.com/LurkSec/lurkcloud.git
