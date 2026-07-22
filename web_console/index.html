@@ -6,8 +6,10 @@
     <title>LurkSec Master Security Operations Suite</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Top Header Bar -->
@@ -48,8 +50,10 @@
                     </button>
                     <div class="nav-sub-items">
                         <a href="#soc-overview" class="nav-sub-btn active" data-tab="soc-overview">Incident Feed & Health</a>
+                        <a href="#soc-terminal" class="nav-sub-btn" data-tab="soc-terminal">Browser Diagnostic Terminal</a>
                     </div>
                 </div>
+
 
                 <!-- DOMAIN 2: AUTOMATION & RESPONSE -->
                 <div class="nav-domain-header">AUTOMATION & RESPONSE</div>
@@ -402,7 +406,25 @@
                             <pre id="suite-edr-output" style="color:#58a6ff;">Execute an EDR response action above to contain target threats...</pre>
                         </div>
                     </div>
+
+                    <!-- EDR POLICY ENGINE PANEL -->
+                    <div class="panel-box" style="margin-top:20px;">
+                        <div class="panel-header-flex"><span>Automated EDR Prevention Policies</span></div>
+                        <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+                            <input type="text" id="policy-new-name" class="filter-input" placeholder="Rule Name (e.g. Block Mimikatz)">
+                            <input type="text" id="policy-new-proc" class="filter-input" placeholder="Process Name (e.g. powershell.exe)">
+                            <input type="text" id="policy-new-cmd" class="filter-input" placeholder="CMD Contains (e.g. -enc)">
+                            <select id="policy-new-action" class="filter-input">
+                                <option value="KILL_PROCESS">KILL_PROCESS</option>
+                                <option value="QUARANTINE_FILE">QUARANTINE_FILE</option>
+                                <option value="BLOCK_IP">BLOCK_IP</option>
+                            </select>
+                            <button id="btn-add-policy" class="btn btn-primary" style="grid-column:1/-1;justify-self:end;">+ Add Automated EDR Policy Rule</button>
+                        </div>
+                        <div id="edr-policies-container" style="padding:16px;display:flex;flex-direction:column;gap:8px;"></div>
+                    </div>
                 </section>
+
 
                 <!-- PAGE 3: LURKEDR LOGS & VAULT -->
                 <section id="tab-edr-logs" class="tab-page">
@@ -689,17 +711,19 @@
                 <!-- PAGE 13: LURKTRACE PROCESS TREE -->
                 <section id="tab-trace-tree" class="tab-page">
                     <div class="section-title">
-                        <h2>LurkTrace - Parent-Child Process Tree</h2>
-                        <span class="section-subtitle">Mapped Windows Process execution hierarchy</span>
+                        <h2>LurkTrace - Parent-Child Process Tree Graph</h2>
+                        <span class="section-subtitle">Interactive visual node graph mapping Windows process execution hierarchy</span>
                     </div>
 
                     <div class="panel-box">
-                        <div class="panel-header">Process Tree View</div>
-                        <div id="tree-view-container" class="report-box" style="font-family:var(--font-mono);font-size:12px;">
-                            Loading process tree hierarchy...
+                        <div class="panel-header-flex">
+                            <span>Interactive Process Tree Graph</span>
+                            <button id="btn-refresh-tree" class="btn btn-secondary" style="font-size:11px;padding:4px 10px;">Refresh Graph</button>
                         </div>
+                        <div id="vis-process-tree" style="height:480px;background:#0d1117;border:1px solid #21262d;border-radius:6px;"></div>
                     </div>
                 </section>
+
 
                 <!-- PAGE 14: LURKAUDIT OS HARDENING CHECKS -->
                 <section id="tab-audit-checks" class="tab-page">
@@ -790,18 +814,52 @@
                 </section>
 
                 <section id="tab-intel-overview" class="tab-page">
-                    <div class="section-title"><h2>LurkIntel - CTI Feed Overview</h2><span class="section-subtitle">Live threat intelligence cross-referenced against system network connections</span></div>
+                    <div class="section-title"><h2>LurkIntel - CTI Threat Intelligence</h2><span class="section-subtitle">Live ThreatFox IOC sync & cross-referenced system socket connections</span></div>
                     <div class="summary-grid">
-                        <div class="summary-card"><span class="card-label">THREAT FEED SIZE</span><div class="card-value" id="suite-intel-feed">0</div><span class="card-sub">Malicious IPs Tracked</span></div>
+                        <div class="summary-card"><span class="card-label">LIVE CTI FEED</span><div class="card-value" id="suite-intel-feed">0</div><span class="card-sub" id="intel-feed-status">Tracked IOCs</span></div>
                         <div class="summary-card"><span class="card-label">IOC MATCHES</span><div class="card-value" id="suite-intel-ioc" style="color:#f85149;">0</div><span class="card-sub">Active CTI Matches</span></div>
                         <div class="summary-card"><span class="card-label">ACTIVE CONNECTIONS</span><div class="card-value" id="suite-intel-conns" style="color:#58a6ff;">0</div><span class="card-sub">System Remote Endpoints</span></div>
                         <div class="summary-card"><span class="card-label">CISA KEV ENTRIES</span><div class="card-value" id="suite-intel-kev" style="color:#d29922;">0</div><span class="card-sub">Known Exploited CVEs</span></div>
+                    </div>
+                    <div class="panel-box" style="margin-bottom:16px;">
+                        <div class="panel-header-flex">
+                            <span>Live Threat Intelligence Sync (Abuse.ch / ThreatFox)</span>
+                            <button id="btn-sync-threat-feed" class="btn btn-primary">⚡ Sync Live Threat Feed</button>
+                        </div>
+                        <div style="padding:12px;font-size:12px;color:#8b949e;" id="threat-feed-sync-msg">Click 'Sync Live Threat Feed' to fetch fresh malware/C2 IOCs.</div>
                     </div>
                     <div class="panel-box">
                         <div class="panel-header-flex"><span>IOC Match Results</span><div class="button-group"><button id="btn-suite-intel-json" class="btn btn-outline">Export (JSON)</button></div></div>
                         <div id="suite-intel-ioc-container" class="compliance-list" style="padding:12px;"></div>
                     </div>
                 </section>
+
+                <!-- SOC TERMINAL PAGE -->
+                <section id="tab-soc-terminal" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkSOC - Browser Diagnostic Terminal</h2>
+                        <span class="section-subtitle">Web command prompt for running system diagnostics (whoami, netstat, ipconfig, tasklist, ping, etc.)</span>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header-flex">
+                            <span>Interactive Terminal</span>
+                            <span style="font-family:var(--font-mono);font-size:11px;color:#3fb950;">[ ONLINE ]</span>
+                        </div>
+                        <div style="padding:16px;background:#0d1117;border-radius:0 0 6px 6px;">
+                            <pre id="terminal-output" class="terminal-box" style="min-height:300px;max-height:480px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;font-family:var(--font-mono);font-size:12px;color:#3fb950;padding:12px;background:#161b22;border:1px solid #30363d;border-radius:6px;">LurkSec Master Diagnostic Terminal v1.0
+Type 'whoami', 'netstat', 'ipconfig', 'tasklist', 'ping 127.0.0.1', 'systeminfo', or 'hostname'.
+__________________________________________________________________________________________
+</pre>
+                            <div style="display:flex;gap:10px;margin-top:12px;">
+                                <span style="font-family:var(--font-mono);color:#58a6ff;font-weight:700;align-self:center;">lurksec&gt;</span>
+                                <input type="text" id="terminal-input" class="filter-input" style="flex:1;font-family:var(--font-mono);color:#e6edf3;" placeholder="Enter command (e.g. whoami)...">
+                                <button id="btn-terminal-exec" class="btn btn-primary">Run Command</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
 
                 <section id="tab-intel-ioc" class="tab-page">
                     <div class="section-title"><h2>LurkIntel - IOC Match Stream</h2><span class="section-subtitle">System network sockets cross-referenced against CTI threat IP feeds</span></div>

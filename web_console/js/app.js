@@ -1681,3 +1681,156 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-soar-refresh')?.addEventListener('click', loadSOARData);
 });
+
+// Process Tree Graph with Vis.js
+let processNetwork = null;
+async function renderProcessTreeGraph() {
+    const container = document.getElementById('vis-process-tree');
+    if (!container) return;
+    try {
+        const res = await fetch('/api/trace/tree');
+        if (!res.ok) return;
+        const data = await res.json();
+        const nodes = new vis.DataSet(data.nodes.map(n => ({
+            id: n.id,
+            label: n.label,
+            title: n.title,
+            color: n.group === 'suspicious' ? { background: '#f85149', border: '#da3633' } : { background: '#1f6feb', border: '#388bfd' },
+            font: { color: '#ffffff', face: 'JetBrains Mono', size: 12 }
+        })));
+        const edges = new vis.DataSet(data.edges.map(e => ({ from: e.from, to: e.to, arrows: 'to', color: '#8b949e' })));
+        const options = {
+            physics: { solver: 'forceAtlas2Based', forceAtlas2Based: { gravitationalConstant: -30 } },
+            interaction: { hover: true, tooltipDelay: 100 }
+        };
+        if (processNetwork) processNetwork.destroy();
+        processNetwork = new vis.Network(container, { nodes, edges }, options);
+    } catch(e) { console.warn('Process Tree Graph error:', e); }
+}
+
+// EDR Policy Engine Handlers
+async function loadEDRPolicies() {
+    const c = document.getElementById('edr-policies-container');
+    if (!c) return;
+    try {
+        const res = await fetch('/api/edr/policies');
+        const d = await res.json();
+        const policies = d.policies || [];
+        if (!policies.length) {
+            c.innerHTML = '<div style="color:#8b949e;font-size:12px;">No automated policies defined.</div>';
+            return;
+        }
+        c.innerHTML = policies.map(p => `
+            <div style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span style="font-family:var(--font-mono);font-size:11px;color:#58a6ff;">[${p.id}]</span>
+                    <strong style="color:#e6edf3;font-size:13px;margin-left:6px;">${p.name}</strong>
+                    <span style="font-size:11px;color:#8b949e;margin-left:10px;">Proc: <code>${p.process_name || '*'}</code> | CMD: <code>${p.cmd_contains || '*'}</code> | Action: <span style="color:#f85149;">${p.action}</span></span>
+                </div>
+                <div style="display:flex;gap:6px;">
+                    <button onclick="toggleEDRPolicy('${p.id}')" class="btn btn-outline" style="font-size:11px;padding:3px 8px;">${p.enabled ? 'Disable' : 'Enable'}</button>
+                    <button onclick="deleteEDRPolicy('${p.id}')" class="btn btn-secondary" style="font-size:11px;padding:3px 8px;color:#f85149;">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {}
+}
+
+async function addEDRPolicy() {
+    const name = document.getElementById('policy-new-name')?.value.trim();
+    const proc = document.getElementById('policy-new-proc')?.value.trim();
+    const cmd = document.getElementById('policy-new-cmd')?.value.trim();
+    const action = document.getElementById('policy-new-action')?.value || 'KILL_PROCESS';
+
+    if (!name) return alert('Policy name is required.');
+    try {
+        await fetch('/api/edr/policy/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, process_name: proc, cmd_contains: cmd, action })
+        });
+        document.getElementById('policy-new-name').value = '';
+        document.getElementById('policy-new-proc').value = '';
+        document.getElementById('policy-new-cmd').value = '';
+        loadEDRPolicies();
+    } catch(e) {}
+}
+
+async function toggleEDRPolicy(id) {
+    try {
+        await fetch('/api/edr/policy/toggle', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id })
+        });
+        loadEDRPolicies();
+    } catch(e) {}
+}
+
+async function deleteEDRPolicy(id) {
+    try {
+        await fetch('/api/edr/policy/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id })
+        });
+        loadEDRPolicies();
+    } catch(e) {}
+}
+
+// Live Threat Feed Sync
+async function syncThreatFeed() {
+    const msg = document.getElementById('threat-feed-sync-msg');
+    if (msg) msg.textContent = '⚡ Fetching live IOC feed from ThreatFox API...';
+    try {
+        const res = await fetch('/api/intel/feed/sync');
+        const d = await res.json();
+        if (msg) msg.textContent = d.message || 'Sync completed.';
+        if (document.getElementById('suite-intel-feed')) {
+            document.getElementById('suite-intel-feed').innerText = d.count || 0;
+        }
+    } catch(e) {
+        if (msg) msg.textContent = 'Sync error: ' + e.message;
+    }
+}
+
+// Browser Terminal Execution
+async function execTerminalCmd() {
+    const input = document.getElementById('terminal-input');
+    const output = document.getElementById('terminal-output');
+    if (!input || !output) return;
+    const cmd = input.value.trim();
+    if (!cmd) return;
+
+    output.textContent += `\n\nlurksec> ${cmd}\nExecuting...`;
+    output.scrollTop = output.scrollHeight;
+    input.value = '';
+
+    try {
+        const res = await fetch('/api/terminal/exec', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ command: cmd })
+        });
+        const d = await res.json();
+        output.textContent += `\n${d.output}`;
+        output.scrollTop = output.scrollHeight;
+    } catch(e) {
+        output.textContent += `\nExecution error: ${e.message}`;
+        output.scrollTop = output.scrollHeight;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-add-policy')?.addEventListener('click', addEDRPolicy);
+    document.getElementById('btn-refresh-tree')?.addEventListener('click', renderProcessTreeGraph);
+    document.getElementById('btn-sync-threat-feed')?.addEventListener('click', syncThreatFeed);
+    document.getElementById('btn-terminal-exec')?.addEventListener('click', execTerminalCmd);
+    document.getElementById('terminal-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') execTerminalCmd();
+    });
+
+    loadEDRPolicies();
+    setTimeout(renderProcessTreeGraph, 800);
+});
+

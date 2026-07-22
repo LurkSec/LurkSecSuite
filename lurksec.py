@@ -27,10 +27,12 @@ from lurksec_core.edr_engine.process_killer import ProcessKiller
 from lurksec_core.edr_engine.firewall_blocker import FirewallBlocker
 from lurksec_core.edr_engine.file_quarantiner import FileQuarantiner
 from lurksec_core.edr_engine.memory_carver import MemoryCarver
+from lurksec_core.edr_engine.policy_engine import EDRPolicyEngine
 
 from lurksec_core.shield_engine.waf_inspector import WAFInspector
 from lurksec_core.shield_engine.rate_limiter import RateLimiter
 from lurksec_core.intel_engine.cti_engine import CTIFeedManager, IOCMatcher, MITREMapper
+from lurksec_core.intel_engine.threat_feed import ThreatFeedManager
 from lurksec_core.identity_engine.identity_engine import SecretScanner, PolicyAuditor
 from lurksec_core.identity_engine.hibp_checker import HIBPChecker
 from lurksec_core.cloud_engine.cloud_engine import AWSInspector, AzureInspector, BaselineAuditor
@@ -63,7 +65,10 @@ ZERO_ENGINE = ZeroTrustEngine()
 VULN_ENGINE = VulnerabilityScanner()
 SAND_ENGINE = MalwareSandbox()
 GUARD_ENGINE = ITDRAuditor()
+POLICY_ENGINE = EDRPolicyEngine()
+THREAT_FEED = ThreatFeedManager()
 HUNT_HITS = []
+
 
 class LurkSecHandler(SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
@@ -144,6 +149,32 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                     "message": res["message"]
                 })
                 self.send_json(res)
+
+            elif path == "/api/edr/policies":
+                self.send_json({"policies": POLICY_ENGINE.get_rules()})
+
+            elif path == "/api/intel/feed/sync":
+                self.send_json(THREAT_FEED.fetch_live_feed())
+
+            elif path == "/api/trace/tree":
+                procs = ProcessAuditor.get_live_processes()
+                nodes = []
+                edges = []
+                for p in procs:
+                    pid = p.get("pid")
+                    ppid = p.get("ppid", 0)
+                    name = p.get("name", "Unknown")
+                    cmd = p.get("command_line", "")
+                    nodes.append({
+                        "id": pid,
+                        "label": f"{name}\n(PID: {pid})",
+                        "title": f"CommandLine: {cmd}",
+                        "group": "suspicious" if any(s in cmd.lower() for s in ["-enc", "bypass", "downloadstring", "mimikatz"]) else "normal"
+                    })
+                    if ppid and any(parent["pid"] == ppid for parent in procs):
+                        edges.append({"from": ppid, "to": pid})
+                self.send_json({"nodes": nodes, "edges": edges, "total_processes": len(procs)})
+
 
             elif path == "/api/shield/inspect":
                 from urllib.parse import unquote
@@ -435,13 +466,16 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
             "soc_incidents": soc_incidents,
             "edr": {
                 "action_logs": EDR_ACTION_LOGS,
-                "quarantined_files": FileQuarantiner.list_quarantined_files()
+                "quarantined_files": FileQuarantiner.list_quarantined_files(),
+                "policies": POLICY_ENGINE.get_rules()
             },
+            "threat_feed": THREAT_FEED.get_summary(),
             "soar": {
                 "playbooks_count": len(SOAR_PLAYBOOKS.get_playbooks()),
                 "cases_count": len(SOAR_CASES.get_cases()),
                 "open_cases": len([c for c in SOAR_CASES.get_cases() if c["status"] in ["OPEN", "IN_PROGRESS"]])
             },
+
             "hunt": {
                 "sigma_rules_count": len(HUNT_SIGMA.get_rules()),
                 "yara_sigs_count": len(HUNT_YARA.get_signatures()),
@@ -515,8 +549,44 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 context = {"ip": ip, "target_host": "LOCAL-HOST"} if ip else {"target_host": "LOCAL-HOST"}
                 self.send_json(SOAR_PLAYBOOKS.execute_playbook(p_id, context))
 
+            elif path == "/api/edr/policy/add":
+                name = body.get("name", "Custom Rule")
+                proc_name = body.get("process_name", "")
+                cmd = body.get("cmd_contains", "")
+                action = body.get("action", "KILL_PROCESS")
+                sev = body.get("severity", "HIGH")
+                self.send_json(POLICY_ENGINE.add_rule(name, proc_name, cmd, action, sev))
+
+            elif path == "/api/edr/policy/toggle":
+                rule_id = body.get("id", "")
+                self.send_json(POLICY_ENGINE.toggle_rule(rule_id))
+
+            elif path == "/api/edr/policy/delete":
+                rule_id = body.get("id", "")
+                self.send_json(POLICY_ENGINE.delete_rule(rule_id))
+
+            elif path == "/api/terminal/exec":
+                import subprocess
+                cmd_str = body.get("command", "").strip()
+                allowed = ["whoami", "netstat", "ipconfig", "tasklist", "ping", "nslookup", "systeminfo", "dir", "sc", "hostname"]
+                first_word = cmd_str.split()[0].lower() if cmd_str else ""
+                if not first_word or first_word not in allowed:
+                    self.send_json({
+                        "success": False,
+                        "output": f"Command '{first_word}' restricted. Allowed diagnostic tools: {', '.join(allowed)}"
+                    })
+                else:
+                    try:
+                        out = subprocess.check_output(cmd_str, shell=True, text=True, errors="ignore", timeout=6)
+                        self.send_json({"success": True, "output": out or "Command executed successfully (no output)."})
+                    except subprocess.TimeoutExpired:
+                        self.send_json({"success": False, "output": "Execution timed out (6s limit)."})
+                    except Exception as e:
+                        self.send_json({"success": False, "output": f"Execution error: {str(e)}"})
+
             else:
                 self.send_json({"error": f"Unknown POST endpoint: {path}"})
+
 
         except (ConnectionAbortedError, BrokenPipeError):
             pass
