@@ -10,11 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
 let state = {
     masterData: {},
     socChart: null,
-    autoRefreshActive: localStorage.getItem('lurksec_auto_refresh') !== 'false',
+    autoRefreshActive: localStorage.getItem('lurksec_auto_refresh') === 'true',
     autoRefreshInterval: null,
     sortColumn: 'timestamp',
     sortDirection: 'desc'
 };
+
 
 
 function initNavigation() {
@@ -55,6 +56,9 @@ function initNavigation() {
 }
 
 async function loadMasterData() {
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+        return; // Don't interrupt active typing
+    }
     try {
         const res = await fetch('/api/summary?t=' + Date.now());
         if (res.ok) {
@@ -65,6 +69,7 @@ async function loadMasterData() {
         console.warn("Master API Error:", e);
     }
 }
+
 
 function renderDashboard() {
     const data = state.masterData;
@@ -645,11 +650,11 @@ function setupEventListeners() {
     function updateAutoRefreshUI() {
         if (!btnAutoRefresh) return;
         if (state.autoRefreshActive) {
-            btnAutoRefresh.innerText = `Auto-Refresh: LIVE (1s)`;
+            btnAutoRefresh.innerText = `Auto-Refresh: ON (3s)`;
             btnAutoRefresh.style.borderColor = "#3fb950";
             btnAutoRefresh.style.color = "#3fb950";
             if (!state.autoRefreshInterval) {
-                state.autoRefreshInterval = setInterval(() => loadMasterData(), 1000);
+                state.autoRefreshInterval = setInterval(() => loadMasterData(), 3000);
             }
         } else {
             btnAutoRefresh.innerText = `Auto-Refresh: OFF`;
@@ -661,6 +666,7 @@ function setupEventListeners() {
             }
         }
     }
+
 
     if (btnAutoRefresh) {
         btnAutoRefresh.addEventListener('click', () => {
