@@ -101,3 +101,12 @@ class MasterReportGenerator:
 </body>
 </html>"""
         return html
+
+    def generate_json(self) -> str:
+        return self.to_json()
+
+    def generate_markdown(self) -> str:
+        return self.to_markdown()
+
+    def generate_html(self) -> str:
+        return self.to_html()
