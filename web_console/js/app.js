@@ -741,3 +741,312 @@ function setupFilters() {
         });
     }
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// LURKSHIELD WAF ENGINE HANDLERS
+// ═══════════════════════════════════════════════════════════════════
+async function loadShieldData() {
+    try {
+        const res = await fetch('/api/shield/summary?t=' + Date.now());
+        if (res.ok) {
+            const d = await res.json();
+            document.getElementById('suite-shield-inspected').innerText = d.total_inspected || 0;
+            document.getElementById('suite-shield-blocked').innerText = d.total_blocked || 0;
+            document.getElementById('suite-shield-high').innerText = d.high_severity_blocks || 0;
+            document.getElementById('suite-shield-rules').innerText = (d.active_rules || []).length;
+            renderShieldLog(d.block_log || []);
+            renderShieldRules(d.active_rules || []);
+            renderShieldRateIPs(d.top_ips || [], d.blocked_ips || []);
+        }
+    } catch(e) { console.warn('Shield API error:', e); }
+}
+
+function renderShieldLog(logs) {
+    const tbody = document.getElementById('suite-shield-log-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!logs.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:#8b949e;">No requests inspected yet.</td></tr>'; return; }
+    logs.slice(0,20).forEach(r => {
+        const tr = document.createElement('tr');
+        const color = r.blocked ? '#f85149' : '#3fb950';
+        const rules = (r.rules_matched || []).map(m => m.rule_id).join(', ') || '—';
+        tr.innerHTML = `<td><code>${r.timestamp}</code></td><td><strong style="color:#58a6ff;">${r.method}</strong></td><td><code>${r.uri}</code></td><td><code>${r.client_ip || '—'}</code></td><td><strong style="color:${color};">[${r.action}]</strong></td><td><code>${rules}</code></td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function renderShieldRules(rules) {
+    const c = document.getElementById('suite-shield-rules-container');
+    if (!c) return;
+    c.innerHTML = '';
+    rules.forEach(r => {
+        const div = document.createElement('div');
+        div.className = `compliance-card ${r.severity}`;
+        div.innerHTML = `<div class="compliance-header"><span class="compliance-title">${r.rule_id} — ${r.name}</span><span class="compliance-tag ${r.severity}">${r.severity}</span></div><div class="compliance-desc">Category: ${r.category}</div>`;
+        c.appendChild(div);
+    });
+}
+
+function renderShieldRateIPs(topIPs, blockedIPs) {
+    const topTbody = document.getElementById('suite-shield-topip-tbody');
+    const blockedTbody = document.getElementById('suite-shield-blocked-tbody');
+    if (topTbody) {
+        topTbody.innerHTML = '';
+        if (!topIPs.length) { topTbody.innerHTML = '<tr><td colspan="3" style="color:#8b949e;">No IP traffic recorded.</td></tr>'; }
+        topIPs.forEach(ip => {
+            const tr = document.createElement('tr');
+            const color = ip.rate_limited ? '#f85149' : '#c9d1d9';
+            tr.innerHTML = `<td><code>${ip.ip}</code></td><td><strong style="color:${color};">${ip.request_count}</strong></td><td style="color:${color};">${ip.rate_limited ? '[RATE LIMITED]' : '[OK]'}</td>`;
+            topTbody.appendChild(tr);
+        });
+    }
+    if (blockedTbody) {
+        blockedTbody.innerHTML = '';
+        if (!blockedIPs.length) { blockedTbody.innerHTML = '<tr><td colspan="2" style="color:#8b949e;">No IPs rate-limited.</td></tr>'; }
+        blockedIPs.forEach(ip => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><code style="color:#f85149;">${ip.ip}</code></td><td><code>${ip.blocked_since}</code></td>`;
+            blockedTbody.appendChild(tr);
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Shield inspect button
+    document.getElementById('btn-suite-shield-inspect')?.addEventListener('click', async () => {
+        const method = document.getElementById('suite-shield-method').value;
+        const uri = document.getElementById('suite-shield-uri').value;
+        const ip = document.getElementById('suite-shield-ip').value || '127.0.0.1';
+        if (!uri) { alert('Enter a URI.'); return; }
+        document.getElementById('suite-shield-result').innerText = '[+] Running WAF inspection...';
+        try {
+            const res = await fetch(`/api/shield/inspect?method=${method}&uri=${encodeURIComponent(uri)}&ip=${encodeURIComponent(ip)}`);
+            const result = await res.json();
+            document.getElementById('suite-shield-result').innerText = JSON.stringify(result, null, 2);
+            await loadShieldData();
+        } catch(e) { document.getElementById('suite-shield-result').innerText = `Error: ${e.message}`; }
+    });
+
+    document.querySelectorAll('.suite-quick-payload').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('suite-shield-uri').value = btn.getAttribute('data-uri');
+            document.getElementById('suite-shield-method').value = btn.getAttribute('data-method');
+        });
+    });
+
+    document.getElementById('btn-suite-shield-json')?.addEventListener('click', async () => {
+        const res = await fetch('/api/shield/summary'); downloadFile(JSON.stringify(await res.json(), null, 2), 'LurkShield_BlockLog.json', 'application/json');
+    });
+    document.getElementById('btn-suite-shield-csv')?.addEventListener('click', async () => {
+        const res = await fetch('/api/shield/summary'); const d = await res.json();
+        let csv = "Timestamp,Method,URI,Action,Severity\n";
+        (d.block_log || []).forEach(r => { csv += `"${r.timestamp}","${r.method}","${r.uri}","${r.action}","${r.severity}"\n`; });
+        downloadFile(csv, 'LurkShield_BlockLog.csv', 'text/csv');
+    });
+
+    // Load shield data when WAF tab is shown
+    document.querySelectorAll('[data-tab="shield-overview"],[data-tab="shield-inspect"],[data-tab="shield-rate"]').forEach(btn => {
+        btn.addEventListener('click', () => setTimeout(loadShieldData, 100));
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// LURKINTEL CTI ENGINE HANDLERS
+// ═══════════════════════════════════════════════════════════════════
+async function loadIntelData() {
+    try {
+        const res = await fetch('/api/intel/summary?t=' + Date.now());
+        if (!res.ok) return;
+        const d = await res.json();
+        document.getElementById('suite-intel-feed').innerText = d.threat_feed_size || 0;
+        document.getElementById('suite-intel-ioc').innerText = (d.ioc_matches || []).length;
+        document.getElementById('suite-intel-conns').innerText = d.active_connections || 0;
+        document.getElementById('suite-intel-kev').innerText = d.cisa_kev_count || 0;
+        renderIntelIOCContainer(d.ioc_matches || []);
+        renderIntelIOCTable(d.ioc_matches || []);
+        renderIntelKEVTable(d.cisa_kev || []);
+    } catch(e) { console.warn('Intel API error:', e); }
+}
+
+function renderIntelIOCContainer(matches) {
+    const c = document.getElementById('suite-intel-ioc-container');
+    if (!c) return;
+    c.innerHTML = '';
+    if (!matches.length) {
+        c.innerHTML = '<div class="compliance-card LOW"><div class="compliance-header"><span class="compliance-title">No Active IOC Matches</span><span class="compliance-tag">CLEAN</span></div><div class="compliance-desc">No system connections matched the CTI threat feed.</div></div>';
+        return;
+    }
+    matches.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'compliance-card HIGH';
+        div.innerHTML = `<div class="compliance-header"><span class="compliance-title">IOC: ${m.indicator} (${m.foreign_address})</span><span class="compliance-tag HIGH">${m.severity}</span></div><div class="compliance-desc">MITRE: ${m.mitre_technique} — ${m.mitre_name} | ${m.protocol}</div>`;
+        c.appendChild(div);
+    });
+}
+
+function renderIntelIOCTable(matches) {
+    const tbody = document.getElementById('suite-intel-ioc-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!matches.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:#8b949e;">No IOC matches.</td></tr>'; return; }
+    matches.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><code>${m.timestamp}</code></td><td><code style="color:#f85149;">${m.indicator}</code></td><td><code>${m.foreign_address}</code></td><td><strong style="color:#58a6ff;">${m.protocol}</strong></td><td><strong style="color:#f85149;">[${m.severity}]</strong></td><td><code>${m.mitre_technique}</code></td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function renderIntelKEVTable(kev) {
+    const tbody = document.getElementById('suite-intel-kev-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!kev.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:#8b949e;">CISA KEV feed not available.</td></tr>'; return; }
+    kev.forEach(v => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><code style="color:#d29922;">${v.cveID||'—'}</code></td><td>${v.vendorProject||'—'}/${v.product||'—'}</td><td>${v.vulnerabilityName||'—'}</td><td><code>${v.dueDate||'—'}</code></td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-tab="intel-overview"],[data-tab="intel-ioc"],[data-tab="intel-kev"]').forEach(btn => {
+        btn.addEventListener('click', () => setTimeout(loadIntelData, 100));
+    });
+    document.getElementById('btn-suite-intel-json')?.addEventListener('click', async () => {
+        const res = await fetch('/api/intel/summary'); downloadFile(JSON.stringify(await res.json(), null, 2), 'LurkIntel_IOC_Report.json', 'application/json');
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// LURKIDENTITY ENGINE HANDLERS
+// ═══════════════════════════════════════════════════════════════════
+async function loadIdentityData() {
+    try {
+        const res = await fetch('/api/identity/summary?t=' + Date.now());
+        if (!res.ok) return;
+        const d = await res.json();
+        document.getElementById('suite-id-total').innerText = d.total_findings || 0;
+        document.getElementById('suite-id-high').innerText = d.high_severity || 0;
+        document.getElementById('suite-id-med').innerText = d.medium_severity || 0;
+        document.getElementById('suite-id-policy').innerText = `${d.policy_pass || 0}/${(d.policy_audits || []).length}`;
+        renderIdentityFindings(d.findings || []);
+        renderIdentityPolicy(d.policy_audits || []);
+    } catch(e) { console.warn('Identity API error:', e); }
+}
+
+function renderIdentityFindings(findings) {
+    const c = document.getElementById('suite-id-findings-container');
+    if (!c) return;
+    c.innerHTML = '';
+    if (!findings.length) {
+        c.innerHTML = '<div class="compliance-card LOW"><div class="compliance-header"><span class="compliance-title">No Secret Findings</span><span class="compliance-tag">CLEAN</span></div><div class="compliance-desc">No API keys, credentials, or private keys detected in scanned directories.</div></div>';
+        return;
+    }
+    findings.forEach(f => {
+        const div = document.createElement('div');
+        div.className = `compliance-card ${f.severity}`;
+        div.innerHTML = `<div class="compliance-header"><span class="compliance-title">${f.finding_id} — ${f.secret_type}</span><span class="compliance-tag ${f.severity}">${f.severity}</span></div><div class="compliance-desc">File: <code style="color:#58a6ff;">${f.file_path}</code><br>${f.evidence}</div>`;
+        c.appendChild(div);
+    });
+}
+
+function renderIdentityPolicy(audits) {
+    const c = document.getElementById('suite-id-policy-container');
+    if (!c) return;
+    c.innerHTML = '';
+    audits.forEach(a => {
+        const severity = a.status === 'FAIL' ? 'HIGH' : a.status === 'WARN' ? 'MEDIUM' : 'LOW';
+        const div = document.createElement('div');
+        div.className = `compliance-card ${severity}`;
+        div.innerHTML = `<div class="compliance-header"><span class="compliance-title">${a.audit_id} — ${a.component}</span><span class="compliance-tag ${severity}">${a.status}</span></div><div class="compliance-desc">Current: <strong>${a.value}</strong> | ${a.recommendation}</div>`;
+        c.appendChild(div);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-tab="identity-findings"],[data-tab="identity-policy"],[data-tab="identity-hibp"]').forEach(btn => {
+        btn.addEventListener('click', () => setTimeout(loadIdentityData, 100));
+    });
+    document.getElementById('btn-suite-hibp-check')?.addEventListener('click', async () => {
+        const pw = document.getElementById('suite-hibp-pw').value;
+        if (!pw) { alert('Enter a password.'); return; }
+        document.getElementById('suite-hibp-result').innerText = '[+] Querying HIBP...';
+        const res = await fetch(`/api/identity/hibp?pw=${encodeURIComponent(pw)}`);
+        const result = await res.json();
+        document.getElementById('suite-hibp-result').innerText = JSON.stringify(result, null, 2);
+        document.getElementById('suite-hibp-result').style.color = result.found_in_breach ? '#f85149' : '#3fb950';
+    });
+    document.getElementById('btn-suite-id-json')?.addEventListener('click', async () => {
+        const res = await fetch('/api/identity/summary'); downloadFile(JSON.stringify(await res.json(), null, 2), 'LurkIdentity_Findings.json', 'application/json');
+    });
+    document.getElementById('btn-suite-id-csv')?.addEventListener('click', async () => {
+        const res = await fetch('/api/identity/summary'); const d = await res.json();
+        let csv = "Timestamp,FindingID,SecretType,Severity,FilePath\n";
+        (d.findings || []).forEach(f => { csv += `"${f.timestamp}","${f.finding_id}","${f.secret_type}","${f.severity}","${f.file_path}"\n`; });
+        downloadFile(csv, 'LurkIdentity_Findings.csv', 'text/csv');
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// LURKCLOUD ENGINE HANDLERS
+// ═══════════════════════════════════════════════════════════════════
+async function loadCloudData() {
+    try {
+        const res = await fetch('/api/cloud/summary?t=' + Date.now());
+        if (!res.ok) return;
+        const d = await res.json();
+        const awsEl = document.getElementById('suite-cloud-aws');
+        if (awsEl) { awsEl.innerText = d.aws_available ? 'ACTIVE' : 'N/A'; awsEl.style.color = d.aws_available ? '#3fb950' : '#f85149'; }
+        const azureEl = document.getElementById('suite-cloud-azure');
+        if (azureEl) { azureEl.innerText = d.azure_available ? 'ACTIVE' : 'N/A'; azureEl.style.color = d.azure_available ? '#3fb950' : '#f85149'; }
+        document.getElementById('suite-cloud-total').innerText = d.total_findings || 0;
+        document.getElementById('suite-cloud-high').innerText = d.high_severity || 0;
+        renderCloudFindings(d.all_findings || [], d.aws_available, d.azure_available);
+        renderCloudBaseline(d.baseline || []);
+    } catch(e) { console.warn('Cloud API error:', e); }
+}
+
+function renderCloudFindings(findings, awsOk, azureOk) {
+    const c = document.getElementById('suite-cloud-findings-container');
+    if (!c) return;
+    c.innerHTML = '';
+    if (!findings.length) {
+        const msg = (!awsOk && !azureOk) ? 'AWS/Azure CLI not configured. Install CLI and authenticate to begin cloud auditing.' : 'No cloud security violations found. Infrastructure appears compliant.';
+        c.innerHTML = `<div class="compliance-card LOW"><div class="compliance-header"><span class="compliance-title">${(!awsOk && !azureOk) ? 'CLI Not Configured' : 'No Findings'}</span><span class="compliance-tag">${(!awsOk && !azureOk) ? 'WARN' : 'PASS'}</span></div><div class="compliance-desc">${msg}</div></div>`;
+        return;
+    }
+    findings.forEach(f => {
+        const div = document.createElement('div');
+        div.className = `compliance-card ${f.severity}`;
+        div.innerHTML = `<div class="compliance-header"><span class="compliance-title">${f.resource_type} — ${f.resource_id}</span><span class="compliance-tag ${f.severity}">${f.status} | ${f.severity}</span></div><div class="compliance-desc">${f.finding}<br><em style="color:#58a6ff;">Recommendation: ${f.recommendation}</em></div>`;
+        c.appendChild(div);
+    });
+}
+
+function renderCloudBaseline(baseline) {
+    const c = document.getElementById('suite-cloud-baseline-container');
+    if (!c) return;
+    c.innerHTML = '';
+    baseline.forEach(b => {
+        const severity = b.status === 'FAIL' ? 'HIGH' : b.status === 'WARN' ? 'MEDIUM' : 'LOW';
+        const div = document.createElement('div');
+        div.className = `compliance-card ${severity}`;
+        div.innerHTML = `<div class="compliance-header"><span class="compliance-title">${b.audit_id} — ${b.component}</span><span class="compliance-tag ${severity}">${b.status}</span></div><div class="compliance-desc">Status: <strong>${b.value}</strong> | ${b.recommendation}</div>`;
+        c.appendChild(div);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-tab="cloud-overview"],[data-tab="cloud-baseline"]').forEach(btn => {
+        btn.addEventListener('click', () => setTimeout(loadCloudData, 100));
+    });
+    document.getElementById('btn-suite-cloud-json')?.addEventListener('click', async () => {
+        const res = await fetch('/api/cloud/summary'); downloadFile(JSON.stringify(await res.json(), null, 2), 'LurkCloud_Report.json', 'application/json');
+    });
+    document.getElementById('btn-suite-cloud-csv')?.addEventListener('click', async () => {
+        const res = await fetch('/api/cloud/summary'); const d = await res.json();
+        let csv = "Timestamp,ResourceType,ResourceID,Severity,Status,Finding\n";
+        (d.all_findings || []).forEach(f => { csv += `"${f.timestamp}","${f.resource_type}","${f.resource_id}","${f.severity}","${f.status}","${f.finding}"\n`; });
+        downloadFile(csv, 'LurkCloud_Report.csv', 'text/csv');
+    });
+});

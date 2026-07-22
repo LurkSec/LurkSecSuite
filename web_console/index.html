@@ -136,7 +136,62 @@
                     </div>
                 </div>
 
-                <!-- 9. Master Reports Parent -->
+                <!-- 9. LurkShield WAF Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="shield">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>LurkShield WAF</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a class="nav-sub-btn" data-tab="shield-overview">WAF Overview</a>
+                        <a class="nav-sub-btn" data-tab="shield-inspect">Request Inspector</a>
+                        <a class="nav-sub-btn" data-tab="shield-rate">Rate Limiter</a>
+                    </div>
+                </div>
+
+                <!-- 10. LurkIntel CTI Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="intel">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <span>LurkIntel CTI</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a class="nav-sub-btn" data-tab="intel-overview">CTI Overview</a>
+                        <a class="nav-sub-btn" data-tab="intel-ioc">IOC Matches</a>
+                        <a class="nav-sub-btn" data-tab="intel-kev">CISA KEV Catalog</a>
+                    </div>
+                </div>
+
+                <!-- 11. LurkIdentity Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="identity">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span>LurkIdentity</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a class="nav-sub-btn" data-tab="identity-findings">Secret Findings</a>
+                        <a class="nav-sub-btn" data-tab="identity-policy">Password Policy</a>
+                        <a class="nav-sub-btn" data-tab="identity-hibp">HIBP Breach Check</a>
+                    </div>
+                </div>
+
+                <!-- 12. LurkCloud Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="cloud">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                        <span>LurkCloud</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a class="nav-sub-btn" data-tab="cloud-overview">Cloud Overview</a>
+                        <a class="nav-sub-btn" data-tab="cloud-baseline">CLI Baseline</a>
+                    </div>
+                </div>
+
+                <!-- 13. Master Reports Parent -->
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="reports">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -597,6 +652,133 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- ═══════════════ LURKSHIELD WAF PAGES ═══════════════ -->
+                <section id="tab-shield-overview" class="tab-page">
+                    <div class="section-title"><h2>LurkShield - WAF Overview</h2><span class="section-subtitle">OWASP Top 10 real-time block log and rule engine status</span></div>
+                    <div class="summary-grid">
+                        <div class="summary-card"><span class="card-label">TOTAL INSPECTED</span><div class="card-value" id="suite-shield-inspected">0</div><span class="card-sub">Requests Inspected</span></div>
+                        <div class="summary-card"><span class="card-label">TOTAL BLOCKED</span><div class="card-value" id="suite-shield-blocked" style="color:#f85149;">0</div><span class="card-sub">Malicious Requests</span></div>
+                        <div class="summary-card"><span class="card-label">HIGH SEVERITY</span><div class="card-value" id="suite-shield-high" style="color:#d29922;">0</div><span class="card-sub">Critical Threat Payloads</span></div>
+                        <div class="summary-card"><span class="card-label">ACTIVE RULES</span><div class="card-value" id="suite-shield-rules" style="color:#3fb950;">6</div><span class="card-sub">OWASP Rule Signatures</span></div>
+                    </div>
+                    <div class="panel-box">
+                        <div class="panel-header-flex"><span>WAF Block Log</span><div class="button-group"><button id="btn-suite-shield-json" class="btn btn-outline">Export (JSON)</button><button id="btn-suite-shield-csv" class="btn btn-outline">Export (CSV)</button></div></div>
+                        <table class="raw-table"><thead><tr><th class="col-time">Timestamp</th><th class="col-proto">Method</th><th class="col-msg">URI</th><th class="col-ip">Client IP</th><th class="col-id">Action</th><th class="col-proc">Rule</th></tr></thead><tbody id="suite-shield-log-tbody"></tbody></table>
+                    </div>
+                    <div class="panel-box">
+                        <div class="panel-header">Active OWASP Rules</div>
+                        <div id="suite-shield-rules-container" class="compliance-list" style="padding:12px;"></div>
+                    </div>
+                </section>
+
+                <section id="tab-shield-inspect" class="tab-page">
+                    <div class="section-title"><h2>LurkShield - Request Inspector</h2><span class="section-subtitle">Test HTTP requests against the OWASP WAF engine</span></div>
+                    <div class="panel-box">
+                        <div class="panel-header">Inspect HTTP Request</div>
+                        <div style="padding:16px;display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center;">
+                            <label style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);">HTTP Method:</label>
+                            <select id="suite-shield-method" class="filter-input" style="width:100%;"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option></select>
+                            <label style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);">Request URI:</label>
+                            <input type="text" id="suite-shield-uri" class="filter-input" style="width:100%;" placeholder="/search?q=1' OR 1=1--">
+                            <label style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);">Client IP:</label>
+                            <input type="text" id="suite-shield-ip" class="filter-input" style="width:100%;" placeholder="192.168.1.100">
+                            <span></span><button id="btn-suite-shield-inspect" class="btn btn-primary">Run WAF Inspection</button>
+                        </div>
+                    </div>
+                    <div class="panel-box"><div class="panel-header">Inspection Result</div><div class="report-box" style="padding:12px;"><pre id="suite-shield-result" style="color:#58a6ff;">Enter a request URI above...</pre></div></div>
+                    <div class="panel-box"><div class="panel-header">Quick OWASP Payloads</div><div style="padding:12px;display:flex;flex-wrap:wrap;gap:8px;">
+                        <button class="btn btn-outline suite-quick-payload" data-uri="/search?q=1' OR 1=1--" data-method="GET">SQLi</button>
+                        <button class="btn btn-outline suite-quick-payload" data-uri="/page?url=&lt;script&gt;alert(1)&lt;/script&gt;" data-method="GET">XSS</button>
+                        <button class="btn btn-outline suite-quick-payload" data-uri="/file?path=../../etc/passwd" data-method="GET">Path Traversal</button>
+                        <button class="btn btn-outline suite-quick-payload" data-uri="/api?cmd=|whoami" data-method="GET">CMDi</button>
+                        <button class="btn btn-outline suite-quick-payload" data-uri="/api/health" data-method="GET">Clean Request</button>
+                    </div></div>
+                </section>
+
+                <section id="tab-shield-rate" class="tab-page">
+                    <div class="section-title"><h2>LurkShield - IP Rate Limiter</h2><span class="section-subtitle">Per-IP request rate tracking. IPs exceeding 100 req/min are rate-limited.</span></div>
+                    <div class="panel-box"><div class="panel-header">Rate-Limited IPs</div><table class="raw-table"><thead><tr><th>Client IP</th><th>Blocked Since</th></tr></thead><tbody id="suite-shield-blocked-tbody"></tbody></table></div>
+                    <div class="panel-box"><div class="panel-header">Top IPs by Request Count</div><table class="raw-table"><thead><tr><th>Client IP</th><th>Request Count</th><th>Status</th></tr></thead><tbody id="suite-shield-topip-tbody"></tbody></table></div>
+                </section>
+
+                <!-- ═══════════════ LURKINTEL CTI PAGES ═══════════════ -->
+                <section id="tab-intel-overview" class="tab-page">
+                    <div class="section-title"><h2>LurkIntel - CTI Feed Overview</h2><span class="section-subtitle">Live threat intelligence cross-referenced against system network connections</span></div>
+                    <div class="summary-grid">
+                        <div class="summary-card"><span class="card-label">THREAT FEED SIZE</span><div class="card-value" id="suite-intel-feed">0</div><span class="card-sub">Malicious IPs Tracked</span></div>
+                        <div class="summary-card"><span class="card-label">IOC MATCHES</span><div class="card-value" id="suite-intel-ioc" style="color:#f85149;">0</div><span class="card-sub">Active CTI Matches</span></div>
+                        <div class="summary-card"><span class="card-label">ACTIVE CONNECTIONS</span><div class="card-value" id="suite-intel-conns" style="color:#58a6ff;">0</div><span class="card-sub">System Remote Endpoints</span></div>
+                        <div class="summary-card"><span class="card-label">CISA KEV ENTRIES</span><div class="card-value" id="suite-intel-kev" style="color:#d29922;">0</div><span class="card-sub">Known Exploited CVEs</span></div>
+                    </div>
+                    <div class="panel-box">
+                        <div class="panel-header-flex"><span>IOC Match Results</span><div class="button-group"><button id="btn-suite-intel-json" class="btn btn-outline">Export (JSON)</button></div></div>
+                        <div id="suite-intel-ioc-container" class="compliance-list" style="padding:12px;"></div>
+                    </div>
+                </section>
+
+                <section id="tab-intel-ioc" class="tab-page">
+                    <div class="section-title"><h2>LurkIntel - IOC Match Stream</h2><span class="section-subtitle">System network sockets cross-referenced against CTI threat IP feeds</span></div>
+                    <div class="panel-box"><div class="panel-header">IOC Match Table</div><table class="raw-table"><thead><tr><th class="col-time">Timestamp</th><th class="col-ip">Malicious IP</th><th class="col-ip">Foreign Address</th><th class="col-proto">Protocol</th><th class="col-id">Severity</th><th class="col-proc">MITRE</th></tr></thead><tbody id="suite-intel-ioc-tbody"></tbody></table></div>
+                </section>
+
+                <section id="tab-intel-kev" class="tab-page">
+                    <div class="section-title"><h2>LurkIntel - CISA KEV Catalog</h2><span class="section-subtitle">Live CISA Known Exploited Vulnerabilities catalog feed</span></div>
+                    <div class="panel-box"><div class="panel-header">CISA KEV Catalog (Latest 20)</div><table class="raw-table"><thead><tr><th class="col-id">CVE ID</th><th class="col-proc">Vendor/Product</th><th class="col-msg">Vulnerability</th><th class="col-time">Due Date</th></tr></thead><tbody id="suite-intel-kev-tbody"></tbody></table></div>
+                </section>
+
+                <!-- ═══════════════ LURKIDENTITY PAGES ═══════════════ -->
+                <section id="tab-identity-findings" class="tab-page">
+                    <div class="section-title"><h2>LurkIdentity - Secret Findings</h2><span class="section-subtitle">API keys, private keys, database credentials, and tokens exposed in filesystem</span></div>
+                    <div class="summary-grid">
+                        <div class="summary-card"><span class="card-label">TOTAL FINDINGS</span><div class="card-value" id="suite-id-total">0</div><span class="card-sub">Secrets Detected</span></div>
+                        <div class="summary-card"><span class="card-label">HIGH SEVERITY</span><div class="card-value" id="suite-id-high" style="color:#f85149;">0</div><span class="card-sub">Critical Exposures</span></div>
+                        <div class="summary-card"><span class="card-label">MEDIUM SEVERITY</span><div class="card-value" id="suite-id-med" style="color:#d29922;">0</div><span class="card-sub">Potential Exposures</span></div>
+                        <div class="summary-card"><span class="card-label">POLICY STATUS</span><div class="card-value" id="suite-id-policy" style="color:#3fb950;">-</div><span class="card-sub">Policy Checks Passed</span></div>
+                    </div>
+                    <div class="panel-box">
+                        <div class="panel-header-flex"><span>Secret Findings Detail</span><div class="button-group"><button id="btn-suite-id-json" class="btn btn-outline">Export (JSON)</button><button id="btn-suite-id-csv" class="btn btn-outline">Export (CSV)</button></div></div>
+                        <div id="suite-id-findings-container" class="compliance-list" style="padding:12px;"></div>
+                    </div>
+                </section>
+
+                <section id="tab-identity-policy" class="tab-page">
+                    <div class="section-title"><h2>LurkIdentity - Password Policy Audit</h2><span class="section-subtitle">Windows local account security policy baseline checks</span></div>
+                    <div id="suite-id-policy-container" class="compliance-list"></div>
+                </section>
+
+                <section id="tab-identity-hibp" class="tab-page">
+                    <div class="section-title"><h2>LurkIdentity - HIBP Breach Check</h2><span class="section-subtitle">k-Anonymity SHA-1 prefix password breach check. Full password is never transmitted.</span></div>
+                    <div class="panel-box"><div class="panel-header">HIBP Password Breach Check</div>
+                        <div style="padding:16px;display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center;">
+                            <label style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);">Password:</label>
+                            <input type="password" id="suite-hibp-pw" class="filter-input" style="width:100%;" placeholder="Enter password to check...">
+                            <span></span><button id="btn-suite-hibp-check" class="btn btn-primary">Check Against HIBP</button>
+                        </div>
+                        <div style="padding:0 16px 16px;"><div class="report-box"><pre id="suite-hibp-result" style="color:#8b949e;">Enter a password and click Check. Only the first 5 characters of the SHA-1 hash are sent to HIBP.</pre></div></div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════ LURKCLOUD PAGES ═══════════════ -->
+                <section id="tab-cloud-overview" class="tab-page">
+                    <div class="section-title"><h2>LurkCloud - Cloud Security Posture</h2><span class="section-subtitle">AWS S3, EC2 Security Groups, IAM, Azure NSG, and Storage compliance audit</span></div>
+                    <div class="summary-grid">
+                        <div class="summary-card"><span class="card-label">AWS CLI</span><div class="card-value" id="suite-cloud-aws">—</div><span class="card-sub">AWS Status</span></div>
+                        <div class="summary-card"><span class="card-label">AZURE CLI</span><div class="card-value" id="suite-cloud-azure">—</div><span class="card-sub">Azure Status</span></div>
+                        <div class="summary-card"><span class="card-label">TOTAL FINDINGS</span><div class="card-value" id="suite-cloud-total" style="color:#f85149;">0</div><span class="card-sub">Cloud Violations</span></div>
+                        <div class="summary-card"><span class="card-label">HIGH SEVERITY</span><div class="card-value" id="suite-cloud-high" style="color:#d29922;">0</div><span class="card-sub">Critical Misconfigs</span></div>
+                    </div>
+                    <div class="panel-box">
+                        <div class="panel-header-flex"><span>Cloud Security Findings</span><div class="button-group"><button id="btn-suite-cloud-json" class="btn btn-outline">Export (JSON)</button><button id="btn-suite-cloud-csv" class="btn btn-outline">Export (CSV)</button></div></div>
+                        <div id="suite-cloud-findings-container" class="compliance-list" style="padding:12px;"></div>
+                    </div>
+                </section>
+
+                <section id="tab-cloud-baseline" class="tab-page">
+                    <div class="section-title"><h2>LurkCloud - CLI Baseline Audit</h2><span class="section-subtitle">AWS and Azure CLI installation and credential configuration status</span></div>
+                    <div id="suite-cloud-baseline-container" class="compliance-list"></div>
+                </section>
+
             </main>
         </div>
     </div>

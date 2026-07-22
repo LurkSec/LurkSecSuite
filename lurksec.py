@@ -24,11 +24,20 @@ from lurksec_core.edr_engine.firewall_blocker import FirewallBlocker
 from lurksec_core.edr_engine.file_quarantiner import FileQuarantiner
 from lurksec_core.edr_engine.memory_carver import MemoryCarver
 
+from lurksec_core.shield_engine.waf_inspector import WAFInspector
+from lurksec_core.shield_engine.rate_limiter import RateLimiter
+from lurksec_core.intel_engine.cti_engine import CTIFeedManager, IOCMatcher, MITREMapper
+from lurksec_core.identity_engine.identity_engine import SecretScanner, PolicyAuditor
+from lurksec_core.identity_engine.hibp_checker import HIBPChecker
+from lurksec_core.cloud_engine.cloud_engine import AWSInspector, AzureInspector, BaselineAuditor
+
 # Global Managers
 DECOY_MANAGER = HoneypotManager()
 DECOY_MANAGER.start_all()
 
 EDR_ACTION_LOGS = []
+WAF_BLOCK_LOG = []
+WAF_RATE_LIMITER = RateLimiter()
 
 class LurkSecHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -107,6 +116,87 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                     "message": res["message"]
                 })
                 self.send_json(res)
+
+            # ─── LurkShield WAF Endpoints ───────────────────────────────────────────
+            elif path == "/api/shield/inspect":
+                from urllib.parse import unquote
+                method = params.get("method", ["GET"])[0]
+                uri = unquote(params.get("uri", ["/"])[0])
+                client_ip = params.get("ip", ["127.0.0.1"])[0]
+                result = WAFInspector.inspect_request(method, uri, {})
+                result["client_ip"] = client_ip
+                WAF_RATE_LIMITER.record_request(client_ip)
+                WAF_BLOCK_LOG.insert(0, result)
+                self.send_json(result)
+
+            elif path == "/api/shield/summary":
+                blocked = [r for r in WAF_BLOCK_LOG if r.get("blocked")]
+                self.send_json({
+                    "total_inspected": len(WAF_BLOCK_LOG),
+                    "total_blocked": len(blocked),
+                    "high_severity_blocks": len([r for r in blocked if r.get("severity") == "HIGH"]),
+                    "block_log": WAF_BLOCK_LOG[:50],
+                    "top_ips": WAF_RATE_LIMITER.get_top_ips(),
+                    "blocked_ips": WAF_RATE_LIMITER.get_blocked_ips(),
+                    "active_rules": WAFInspector.get_rule_summary()
+                })
+
+            # ─── LurkIntel CTI Endpoints ────────────────────────────────────────────
+            elif path == "/api/intel/summary":
+                threat_ips = CTIFeedManager.get_threat_ips()
+                kev = CTIFeedManager.get_cisa_kev()
+                active_ips = IOCMatcher.get_active_remote_ips()
+                ioc_matches = IOCMatcher.match_iocs(active_ips, threat_ips)
+                heatmap = MITREMapper.get_technique_heatmap(ioc_matches, [])
+                self.send_json({
+                    "threat_feed_size": len(threat_ips),
+                    "active_connections": len(active_ips),
+                    "ioc_matches": ioc_matches,
+                    "mitre_heatmap": heatmap,
+                    "cisa_kev": kev[:20],
+                    "cisa_kev_count": len(kev)
+                })
+
+            # ─── LurkIdentity Endpoints ─────────────────────────────────────────────
+            elif path == "/api/identity/summary":
+                findings = SecretScanner.scan_filesystem()
+                policy_audits = PolicyAuditor.audit_password_policy()
+                self.send_json({
+                    "total_findings": len(findings),
+                    "high_severity": len([f for f in findings if f.get("severity") == "HIGH"]),
+                    "medium_severity": len([f for f in findings if f.get("severity") == "MEDIUM"]),
+                    "findings": findings,
+                    "policy_audits": policy_audits
+                })
+
+            elif path == "/api/identity/hibp":
+                pw = params.get("pw", [""])[0]
+                if pw:
+                    self.send_json(HIBPChecker.check_password(pw))
+                else:
+                    self.send_json({"error": "No password provided."})
+
+            # ─── LurkCloud Endpoints ────────────────────────────────────────────────
+            elif path == "/api/cloud/summary":
+                aws_available = AWSInspector.check_cli_available()
+                azure_available = AzureInspector.check_cli_available()
+                aws_s3 = AWSInspector.get_s3_findings() if aws_available else []
+                aws_sg = AWSInspector.get_sg_findings() if aws_available else []
+                aws_iam = AWSInspector.get_iam_findings() if aws_available else []
+                aws_findings = aws_s3 + aws_sg + aws_iam
+                azure_findings = (AzureInspector.get_nsg_findings() + AzureInspector.get_storage_findings()) if azure_available else []
+                all_findings = aws_findings + azure_findings
+                baseline = BaselineAuditor.audit()
+                self.send_json({
+                    "aws_available": aws_available,
+                    "azure_available": azure_available,
+                    "aws_findings": aws_findings,
+                    "azure_findings": azure_findings,
+                    "all_findings": all_findings,
+                    "total_findings": len(all_findings),
+                    "high_severity": len([f for f in all_findings if f.get("severity") == "HIGH"]),
+                    "baseline": baseline
+                })
 
             elif path == "/api/report/json":
                 summary = self.get_master_summary()
