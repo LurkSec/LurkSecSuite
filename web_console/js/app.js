@@ -106,6 +106,7 @@ function renderDashboard() {
     renderTraceTree();
     renderAuditFeed();
     renderReportPreview();
+    loadSOARData();
 }
 
 function renderSOCChart() {
@@ -1478,3 +1479,221 @@ async function loadGuardSuiteData() {
         }
     } catch(e) {}
 }
+// ═══════════════════════════════════════════════════════════════
+// LURKSOAR — Full Interactive SOAR Module
+// ═══════════════════════════════════════════════════════════════
+
+const SEVERITY_COLOR = { CRITICAL: '#f85149', HIGH: '#f0883e', MEDIUM: '#d29922', LOW: '#3fb950', INFO: '#58a6ff' };
+const STATUS_COLOR   = { OPEN: '#f85149', IN_PROGRESS: '#d29922', RESOLVED: '#3fb950', CLOSED: '#8b949e' };
+
+async function loadSOARData() {
+    try {
+        const res = await fetch('/api/soar/summary');
+        if (!res.ok) return;
+        const d = await res.json();
+        renderSOARPlaybooks(d.playbooks || []);
+        renderSOARCases(d.cases || []);
+        renderSOARHistory(d.history || []);
+
+        const ec = d.history ? d.history.length : 0;
+        const cc = d.cases ? d.cases.length : 0;
+        const oc = d.cases ? d.cases.filter(c => ['OPEN','IN_PROGRESS'].includes(c.status)).length : 0;
+        el('suite-soar-playbooks-count', d.playbooks ? d.playbooks.length : 4);
+        el('suite-soar-cases-count', cc);
+        el('suite-soar-open-count', oc);
+        el('suite-soar-exec-count', ec);
+    } catch(e) { console.warn('SOAR load error:', e); }
+}
+
+function el(id, val) {
+    const e = document.getElementById(id);
+    if (e) e.innerText = val;
+}
+
+function renderSOARPlaybooks(playbooks) {
+    const c = document.getElementById('suite-soar-playbooks-container');
+    if (!c) return;
+    if (!playbooks.length) {
+        c.innerHTML = '<div class="compliance-card"><div class="compliance-desc">No playbooks loaded.</div></div>';
+        return;
+    }
+    c.innerHTML = playbooks.map(pb => {
+        const sevColor = SEVERITY_COLOR[pb.severity_threshold] || '#58a6ff';
+        const steps = (pb.actions || []).map(a =>
+            `<div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;border-bottom:1px solid #21262d;">
+                <span style="font-family:var(--font-mono);font-size:11px;color:#58a6ff;min-width:20px;">${a.step}.</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:#d29922;min-width:120px;">[${a.type}]</span>
+                <span style="font-size:12px;color:#8b949e;">${a.description}</span>
+            </div>`
+        ).join('');
+        return `
+        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span style="font-family:var(--font-mono);font-size:11px;color:#58a6ff;">${pb.id}</span>
+                    <div style="font-weight:600;font-size:14px;color:#e6edf3;margin-top:2px;">${pb.name}</div>
+                    <div style="font-size:11px;color:#8b949e;margin-top:2px;">Trigger: ${pb.trigger_event}</div>
+                </div>
+                <span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:${sevColor};border:1px solid ${sevColor};border-radius:4px;padding:2px 8px;">${pb.severity_threshold}</span>
+            </div>
+            <div style="border-top:1px solid #21262d;padding-top:8px;">${steps}</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+                <input type="text" placeholder="Target IP (optional)" id="pb-ip-${pb.id}"
+                    style="flex:1;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;font-family:var(--font-mono);font-size:12px;padding:6px 10px;">
+                <button onclick="executePlaybook('${pb.id}')" class="btn btn-primary" style="padding:6px 16px;font-size:12px;">▶ Execute</button>
+            </div>
+            <pre id="pb-result-${pb.id}" style="display:none;margin:0;font-size:11px;padding:8px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#3fb950;white-space:pre-wrap;word-break:break-all;"></pre>
+        </div>`;
+    }).join('');
+}
+
+async function executePlaybook(pbId) {
+    const ipEl = document.getElementById(`pb-ip-${pbId}`);
+    const resEl = document.getElementById(`pb-result-${pbId}`);
+    const ip = ipEl ? ipEl.value.trim() : '';
+    if (resEl) { resEl.style.display='block'; resEl.style.color='#d29922'; resEl.textContent = `Executing ${pbId}...`; }
+    try {
+        const res = await fetch('/api/soar/run', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ id: pbId, ip })
+        });
+        const d = await res.json();
+        if (resEl) {
+            resEl.style.color = d.status === 'SUCCESS' ? '#3fb950' : '#f85149';
+            resEl.textContent = `[${d.status}] Execution ID: ${d.execution_id}\n` +
+                (d.steps || []).map(s => `  Step ${s.step} [${s.type}]: ${s.details}`).join('\n');
+        }
+        loadSOARData(); // refresh counts
+    } catch(e) {
+        if (resEl) { resEl.style.color='#f85149'; resEl.textContent = `Error: ${e.message}`; }
+    }
+}
+
+function renderSOARCases(cases) {
+    const c = document.getElementById('suite-soar-cases-container');
+    if (!c) return;
+    if (!cases.length) {
+        c.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:8px;">No incident cases. Create one below or let the engine auto-generate them.</div>';
+        return;
+    }
+    c.innerHTML = cases.map(cas => {
+        const sc = SEVERITY_COLOR[cas.severity] || '#58a6ff';
+        const stc = STATUS_COLOR[cas.status] || '#58a6ff';
+        const timeline = (cas.timeline || []).map(t =>
+            `<div style="font-size:11px;color:#8b949e;padding:2px 0;"><span style="color:#58a6ff;font-family:var(--font-mono);">[${t.time}]</span> ${t.event}</div>`
+        ).join('');
+        return `
+        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                <div style="flex:1;">
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <span style="font-family:var(--font-mono);font-size:11px;color:#58a6ff;">${cas.case_id}</span>
+                        <span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:${sc};border:1px solid ${sc};border-radius:4px;padding:1px 6px;">${cas.severity}</span>
+                        <span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:${stc};border:1px solid ${stc};border-radius:4px;padding:1px 6px;">${cas.status}</span>
+                    </div>
+                    <div style="font-weight:600;font-size:14px;color:#e6edf3;margin-top:4px;">${cas.title}</div>
+                    <div style="font-size:12px;color:#8b949e;margin-top:2px;">${cas.description || ''}</div>
+                    <div style="font-size:11px;color:#8b949e;margin-top:4px;">Assigned: <span style="color:#e6edf3;">${cas.assigned_to}</span> | Created: ${cas.created_at}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;min-width:170px;">
+                    <select id="case-status-${cas.case_id}" class="filter-input" style="font-size:11px;padding:4px 8px;">
+                        ${['OPEN','IN_PROGRESS','RESOLVED','CLOSED'].map(s =>
+                            `<option value="${s}" ${cas.status===s?'selected':''}>${s}</option>`).join('')}
+                    </select>
+                    <button onclick="updateCaseStatus('${cas.case_id}')" class="btn btn-secondary" style="font-size:11px;padding:4px 10px;">Update Status</button>
+                    <input type="text" id="case-note-${cas.case_id}" class="filter-input" placeholder="Add analyst note..." style="font-size:11px;padding:4px 8px;">
+                    <button onclick="addCaseNote('${cas.case_id}')" class="btn btn-outline" style="font-size:11px;padding:4px 10px;">+ Add Note</button>
+                </div>
+            </div>
+            <details style="margin-top:10px;">
+                <summary style="cursor:pointer;font-size:12px;color:#58a6ff;font-family:var(--font-mono);">Timeline (${(cas.timeline||[]).length} events)</summary>
+                <div style="margin-top:8px;border-left:2px solid #21262d;padding-left:10px;">${timeline}</div>
+            </details>
+            <pre id="case-result-${cas.case_id}" style="display:none;margin-top:8px;font-size:11px;padding:8px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#3fb950;white-space:pre-wrap;"></pre>
+        </div>`;
+    }).join('');
+}
+
+async function updateCaseStatus(caseId) {
+    const sel = document.getElementById(`case-status-${caseId}`);
+    const res = document.getElementById(`case-result-${caseId}`);
+    const status = sel ? sel.value : 'OPEN';
+    if (res) { res.style.display='block'; res.style.color='#d29922'; res.textContent = `Updating ${caseId} → ${status}...`; }
+    try {
+        const r = await fetch('/api/soar/case/update', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ id: caseId, status })
+        });
+        const d = await r.json();
+        if (res) { res.style.color = d.success ? '#3fb950' : '#f85149'; res.textContent = d.success ? `✓ Status updated to ${status}` : d.message; }
+        setTimeout(loadSOARData, 400);
+    } catch(e) { if (res) { res.style.color='#f85149'; res.textContent = `Error: ${e.message}`; } }
+}
+
+async function addCaseNote(caseId) {
+    const inp = document.getElementById(`case-note-${caseId}`);
+    const res = document.getElementById(`case-result-${caseId}`);
+    const note = inp ? inp.value.trim() : '';
+    if (!note) return;
+    if (res) { res.style.display='block'; res.style.color='#d29922'; res.textContent = 'Adding note...'; }
+    try {
+        const r = await fetch('/api/soar/case/update', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ id: caseId, note })
+        });
+        const d = await r.json();
+        if (res) { res.style.color = d.success ? '#3fb950' : '#f85149'; res.textContent = d.success ? `✓ Note added` : d.message; }
+        if (inp) inp.value = '';
+        setTimeout(loadSOARData, 400);
+    } catch(e) { if (res) { res.style.color='#f85149'; res.textContent = `Error: ${e.message}`; } }
+}
+
+function renderSOARHistory(history) {
+    const c = document.getElementById('suite-soar-history-container');
+    if (!c) return;
+    if (!history.length) {
+        c.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:8px;">No executions yet. Run a playbook above.</div>';
+        return;
+    }
+    c.innerHTML = history.map(h => `
+        <div style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:10px 14px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                <span style="font-family:var(--font-mono);font-size:12px;color:#3fb950;">[${h.status}]</span>
+                <span style="font-size:13px;color:#e6edf3;font-weight:600;">${h.playbook_name}</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:#8b949e;">${h.timestamp}</span>
+                <span style="font-family:var(--font-mono);font-size:10px;color:#58a6ff;">${h.execution_id}</span>
+            </div>
+            ${(h.steps||[]).map(s => `<div style="font-size:11px;color:#8b949e;padding:2px 0 0 12px;">Step ${s.step} [${s.type}]: ${s.details}</div>`).join('')}
+        </div>
+    `).join('');
+}
+
+// SOAR create-case form handler
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-soar-create-case')?.addEventListener('click', async () => {
+        const title    = document.getElementById('soar-new-title')?.value.trim();
+        const severity = document.getElementById('soar-new-severity')?.value || 'MEDIUM';
+        const desc     = document.getElementById('soar-new-desc')?.value.trim();
+        const assigned = document.getElementById('soar-new-assigned')?.value.trim() || 'Unassigned';
+        const resEl    = document.getElementById('soar-create-result');
+        if (!title) { if (resEl) { resEl.style.display='block'; resEl.style.color='#f85149'; resEl.textContent='Title is required.'; } return; }
+        if (resEl) { resEl.style.display='block'; resEl.style.color='#d29922'; resEl.textContent='Creating case...'; }
+        try {
+            const r = await fetch('/api/soar/case/create', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ title, severity, description: desc, assigned })
+            });
+            const d = await r.json();
+            if (resEl) { resEl.style.color = d.success ? '#3fb950' : '#f85149'; resEl.textContent = d.success ? `✓ Case created: ${d.case_id}` : JSON.stringify(d); }
+            if (d.success) {
+                document.getElementById('soar-new-title').value = '';
+                document.getElementById('soar-new-desc').value = '';
+                document.getElementById('soar-new-assigned').value = '';
+                setTimeout(loadSOARData, 400);
+            }
+        } catch(e) { if (resEl) { resEl.style.color='#f85149'; resEl.textContent=`Error: ${e.message}`; } }
+    });
+
+    document.getElementById('btn-soar-refresh')?.addEventListener('click', loadSOARData);
+});

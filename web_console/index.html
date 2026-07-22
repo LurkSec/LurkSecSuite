@@ -862,22 +862,51 @@
                     </div>
                 </section>
 
+
                 <!-- ═══════════════ LURKSOAR PAGES ═══════════════ -->
                 <section id="tab-soar-playbooks" class="tab-page">
-                    <div class="section-title"><h2>LurkSOAR - Security Automation & Incident Case Management</h2><span class="section-subtitle">Automated playbooks, multi-stage remediation pipelines, and SOC incident cases</span></div>
+                    <div class="section-title"><h2>LurkSOAR - Security Automation &amp; Incident Response</h2><span class="section-subtitle">Execute automated remediation playbooks and manage SOC incident cases</span></div>
                     <div class="summary-grid">
                         <div class="summary-card"><span class="card-label">PLAYBOOKS</span><div class="card-value" id="suite-soar-playbooks-count">4</div><span class="card-sub">Built-in Workflows</span></div>
-                        <div class="summary-card"><span class="card-label">TOTAL CASES</span><div class="card-value" id="suite-soar-cases-count">2</div><span class="card-sub">All Tracked Cases</span></div>
-                        <div class="summary-card"><span class="card-label">OPEN INCIDENTS</span><div class="card-value" id="suite-soar-open-count" style="color:#f85149;">2</div><span class="card-sub">In Progress</span></div>
+                        <div class="summary-card"><span class="card-label">TOTAL CASES</span><div class="card-value" id="suite-soar-cases-count">0</div><span class="card-sub">All Tracked Cases</span></div>
+                        <div class="summary-card"><span class="card-label">OPEN INCIDENTS</span><div class="card-value" id="suite-soar-open-count" style="color:#f85149;">0</div><span class="card-sub">In Progress</span></div>
                         <div class="summary-card"><span class="card-label">EXECUTIONS</span><div class="card-value" id="suite-soar-exec-count" style="color:#3fb950;">0</div><span class="card-sub">Actions Taken</span></div>
                     </div>
+
+                    <!-- Playbooks -->
                     <div class="panel-box">
                         <div class="panel-header-flex"><span>Automated Remediation Playbooks</span></div>
-                        <div id="suite-soar-playbooks-container" style="padding:12px;"></div>
+                        <div id="suite-soar-playbooks-container" style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
                     </div>
+
+                    <!-- Create Case Form -->
                     <div class="panel-box">
-                        <div class="panel-header-flex"><span>SOC Incident Cases</span></div>
-                        <div id="suite-soar-cases-container" style="padding:12px;"></div>
+                        <div class="panel-header-flex"><span>Create New Incident Case</span></div>
+                        <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <input type="text" id="soar-new-title" class="filter-input" placeholder="Case title (e.g. Brute-force from 203.0.113.5)">
+                            <select id="soar-new-severity" class="filter-input">
+                                <option value="CRITICAL">CRITICAL</option>
+                                <option value="HIGH">HIGH</option>
+                                <option value="MEDIUM" selected>MEDIUM</option>
+                                <option value="LOW">LOW</option>
+                            </select>
+                            <input type="text" id="soar-new-desc" class="filter-input" placeholder="Description / evidence" style="grid-column:1/-1;">
+                            <input type="text" id="soar-new-assigned" class="filter-input" placeholder="Assigned analyst (optional)">
+                            <button id="btn-soar-create-case" class="btn btn-primary" style="grid-column:2;justify-self:end;">Create Case</button>
+                        </div>
+                        <pre id="soar-create-result" class="terminal-box" style="margin:0 16px 16px;min-height:40px;max-height:80px;overflow:auto;display:none;"></pre>
+                    </div>
+
+                    <!-- Case List -->
+                    <div class="panel-box">
+                        <div class="panel-header-flex"><span>SOC Incident Cases</span><button id="btn-soar-refresh" class="btn btn-secondary" style="font-size:11px;padding:4px 10px;">Refresh</button></div>
+                        <div id="suite-soar-cases-container" style="padding:12px;display:flex;flex-direction:column;gap:10px;"></div>
+                    </div>
+
+                    <!-- Execution History -->
+                    <div class="panel-box">
+                        <div class="panel-header-flex"><span>Playbook Execution History</span></div>
+                        <div id="suite-soar-history-container" style="padding:12px;"></div>
                     </div>
                 </section>
 

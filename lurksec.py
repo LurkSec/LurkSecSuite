@@ -376,6 +376,9 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 else:
                     self.send_error(404, "File Not Found")
 
+        except (ConnectionAbortedError, BrokenPipeError):
+            # Browser closed the connection mid-response (navigation / refresh) — harmless.
+            pass
         except Exception as e:
             traceback.print_exc()
             # Always emit a complete HTTP response so the browser never sees
@@ -461,23 +464,77 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
         }
 
     def send_json(self, data):
-        body = json.dumps(data, indent=2, default=str).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(body)
-        self.wfile.flush()
+        try:
+            body = json.dumps(data, indent=2, default=str).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(body)
+            self.wfile.flush()
+        except (ConnectionAbortedError, BrokenPipeError):
+            pass
 
     def send_text(self, text, mime_type):
-        body = text.encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", mime_type)
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-        self.wfile.flush()
+        try:
+            body = text.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", mime_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            self.wfile.flush()
+        except (ConnectionAbortedError, BrokenPipeError):
+            pass
+
+    def do_POST(self):
+        """Handle POST requests — used for SOAR case/playbook mutations."""
+        parsed = urlparse(self.path)
+        path = parsed.path
+        length = int(self.headers.get('Content-Length', 0))
+        raw = self.rfile.read(length) if length else b'{}'
+        try:
+            body = json.loads(raw)
+        except Exception:
+            body = {}
+
+        try:
+            if path == "/api/soar/case/create":
+                title = body.get("title", "Untitled Incident")
+                desc = body.get("description", "")
+                severity = body.get("severity", "MEDIUM")
+                assigned = body.get("assigned", "Unassigned")
+                new_case = SOAR_CASES.create_case(title, severity, desc, evidence=[desc] if desc else None)
+                if assigned and assigned != "Unassigned":
+                    SOAR_CASES.update_case(new_case["case_id"], assigned_to=assigned)
+                    new_case["assigned_to"] = assigned
+                self.send_json({"success": True, "case_id": new_case["case_id"], "case": new_case})
+
+            elif path == "/api/soar/case/update":
+                c_id = body.get("id", "")
+                status = body.get("status")
+                note = body.get("note")
+                assigned = body.get("assigned")
+                self.send_json(SOAR_CASES.update_case(c_id, status=status, note=note, assigned_to=assigned))
+
+            elif path == "/api/soar/run":
+                p_id = body.get("id", "PB-001")
+                ip = body.get("ip", "")
+                context = {"ip": ip, "target_host": "LOCAL-HOST"} if ip else {"target_host": "LOCAL-HOST"}
+                self.send_json(SOAR_PLAYBOOKS.execute_playbook(p_id, context))
+
+            else:
+                self.send_json({"error": f"Unknown POST endpoint: {path}"})
+
+        except (ConnectionAbortedError, BrokenPipeError):
+            pass
+        except Exception as e:
+            traceback.print_exc()
+            try:
+                self.send_json({"error": str(e)})
+            except Exception:
+                pass
 
 
 class DualStackServer(ThreadingHTTPServer):
