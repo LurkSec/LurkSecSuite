@@ -22,10 +22,11 @@ body {
     font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.5;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
-.app-container { display: flex; flex-direction: column; min-height: 100vh; }
+.app-container { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
 .app-header {
     background: #161b22;
@@ -47,7 +48,7 @@ body {
 
 .header-right { display: flex; align-items: center; gap: 10px; }
 
-.app-body { display: flex; flex: 1; }
+.app-body { display: flex; flex: 1; overflow: hidden; }
 
 .app-sidebar {
     width: 240px;
@@ -57,6 +58,9 @@ body {
     flex-direction: column;
     padding: 12px 0;
     overflow-y: auto;
+    overflow-x: hidden;
+    flex-shrink: 0;
+    height: 100%;
 }
 
 /* Nav Group & Parent Collapsible Buttons */
@@ -311,3 +315,45 @@ body {
 
 .tab-page { display: none; }
 .tab-page.active { display: block; }
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOM SCROLLBARS — Dark Charcoal Theme
+   ═══════════════════════════════════════════════════════ */
+
+/* Sidebar scrollbar */
+.app-sidebar::-webkit-scrollbar { width: 4px; }
+.app-sidebar::-webkit-scrollbar-track { background: #0d1117; border-radius: 0; }
+.app-sidebar::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; transition: background 0.2s ease; }
+.app-sidebar::-webkit-scrollbar-thumb:hover { background: #58a6ff; }
+
+/* Main content area scrollbar */
+.app-main::-webkit-scrollbar { width: 6px; }
+.app-main::-webkit-scrollbar-track { background: #0d1117; border-radius: 0; }
+.app-main::-webkit-scrollbar-thumb { background: #21262d; border-radius: 4px; transition: background 0.2s ease; }
+.app-main::-webkit-scrollbar-thumb:hover { background: #58a6ff; }
+
+/* Table containers, report boxes, panel boxes — any nested overflow */
+.raw-table-wrap::-webkit-scrollbar,
+.report-box::-webkit-scrollbar,
+.panel-box::-webkit-scrollbar { width: 4px; height: 4px; }
+.raw-table-wrap::-webkit-scrollbar-track,
+.report-box::-webkit-scrollbar-track,
+.panel-box::-webkit-scrollbar-track { background: #161b22; }
+.raw-table-wrap::-webkit-scrollbar-thumb,
+.report-box::-webkit-scrollbar-thumb,
+.panel-box::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+.raw-table-wrap::-webkit-scrollbar-thumb:hover,
+.report-box::-webkit-scrollbar-thumb:hover,
+.panel-box::-webkit-scrollbar-thumb:hover { background: #58a6ff; }
+
+/* Global fallback — catches any scrollable element not specifically targeted */
+*::-webkit-scrollbar { width: 5px; height: 5px; }
+*::-webkit-scrollbar-track { background: #0d1117; }
+*::-webkit-scrollbar-thumb { background: #21262d; border-radius: 4px; border: 1px solid #30363d; }
+*::-webkit-scrollbar-thumb:hover { background: #58a6ff; box-shadow: 0 0 6px rgba(88, 166, 255, 0.4); }
+*::-webkit-scrollbar-corner { background: #0d1117; }
+
+/* Firefox scrollbar (limited styling support) */
+* { scrollbar-width: thin; scrollbar-color: #30363d #0d1117; }
+.app-sidebar { scrollbar-color: #30363d #0d1117; }
+.app-main { scrollbar-color: #21262d #0d1117; }
