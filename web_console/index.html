@@ -308,9 +308,18 @@
                             <span class="compliance-tag PASS" style="font-size:10px;">TEST SUITE READY</span>
                         </div>
                         <div style="padding:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                            <button id="btn-sim-ransomware" class="btn btn-outline" style="font-size:11px;color:#f85149;border-color:#f85149;">💣 Inject SIGMA Ransomware Event</button>
-                            <button id="btn-sim-waf" class="btn btn-outline" style="font-size:11px;color:#d29922;border-color:#d29922;">🌐 Test WAF OWASP SQLi Payload</button>
-                            <button id="btn-sim-decoy" class="btn btn-outline" style="font-size:11px;color:#a371f7;border-color:#a371f7;">🍯 Generate Deception Probe Telemetry</button>
+                            <button id="btn-sim-ransomware" class="btn btn-outline" style="font-size:11px;color:#f85149;border-color:#f85149;display:inline-flex;align-items:center;gap:6px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                Inject SIGMA Ransomware Event
+                            </button>
+                            <button id="btn-sim-waf" class="btn btn-outline" style="font-size:11px;color:#d29922;border-color:#d29922;display:inline-flex;align-items:center;gap:6px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                Test WAF OWASP SQLi Payload
+                            </button>
+                            <button id="btn-sim-decoy" class="btn btn-outline" style="font-size:11px;color:#a371f7;border-color:#a371f7;display:inline-flex;align-items:center;gap:6px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                                Generate Deception Probe Telemetry
+                            </button>
                             <span id="sim-status-text" style="font-size:11px;color:var(--text-muted);margin-left:auto;">Select a validation trigger above to test live cross-engine correlation.</span>
                         </div>
                     </div>

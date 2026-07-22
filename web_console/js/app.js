@@ -163,6 +163,17 @@ function renderSOCFeed(filteredIncidents = null) {
     incidents.forEach(inc => {
         const div = document.createElement('div');
         div.className = `compliance-card ${inc.severity}`;
+        let actionBtnHTML = '';
+        if (inc.action_type === 'BLOCK_IP' && inc.target_ip) {
+            actionBtnHTML = `
+                <div style="margin-top:8px;">
+                    <button class="btn btn-outline btn-quick-block" data-ip="${inc.target_ip}" style="font-size:10px;color:#f85149;border-color:#f85149;display:inline-flex;align-items:center;gap:4px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                        Execute EDR IP Block (${inc.target_ip})
+                    </button>
+                </div>
+            `;
+        }
         div.innerHTML = `
             <div class="compliance-header">
                 <span class="compliance-title">${inc.engine} | ${inc.title} (${inc.incident_id})</span>
@@ -170,6 +181,7 @@ function renderSOCFeed(filteredIncidents = null) {
             </div>
             <div class="compliance-desc">Category: ${inc.category} | Origin: ${inc.origin} | Time: ${inc.timestamp}</div>
             <div class="compliance-payload">${inc.evidence}</div>
+            ${actionBtnHTML}
         `;
         container.appendChild(div);
     });
