@@ -222,26 +222,36 @@ function renderSOCFeed(filteredIncidents = null) {
     // Attach click handlers for Kill Process buttons
     container.querySelectorAll('.btn-quick-kill').forEach(btn => {
         btn.addEventListener('click', async (e) => {
-            const pid = e.target.closest('button').getAttribute('data-pid');
-            btn.innerText = `Killing PID ${pid}...`;
-            const res = await fetch(`/api/edr/kill?pid=${pid}`);
-            const d = await res.json();
-            btn.innerText = d.success ? `PID ${pid} Killed` : `Kill Failed`;
-            loadMasterData();
+            const target = e.target.closest('button');
+            const pid = target.getAttribute('data-pid');
+            target.innerText = `Killing PID ${pid}...`;
+            try {
+                const res = await fetch(`/api/edr/kill?pid=${pid}`);
+                const d = await res.json();
+                target.innerText = d.success ? `PID ${pid} Killed` : `Kill Failed`;
+                loadMasterData();
+            } catch (err) {
+                target.innerText = `Kill Failed`;
+            }
         });
     });
 
     // Attach click handlers for SOAR case creation
     container.querySelectorAll('.btn-quick-soar').forEach(btn => {
         btn.addEventListener('click', async (e) => {
-            const title = decodeURIComponent(e.target.closest('button').getAttribute('data-title'));
-            const desc = decodeURIComponent(e.target.closest('button').getAttribute('data-desc'));
-            const sev = e.target.closest('button').getAttribute('data-sev');
-            btn.innerText = `Spawning SOAR Case...`;
-            const res = await fetch(`/api/soar/case/create?title=${encodeURIComponent(title)}&description=${encodeURIComponent(desc)}&severity=${sev}&assigned=SecOps%20Analyst`);
-            const d = await res.json();
-            btn.innerText = `SOAR Case ${d.case_id} Created`;
-            loadMasterData();
+            const target = e.target.closest('button');
+            const title = decodeURIComponent(target.getAttribute('data-title'));
+            const desc = decodeURIComponent(target.getAttribute('data-desc'));
+            const sev = target.getAttribute('data-sev');
+            target.innerText = `Spawning SOAR Case...`;
+            try {
+                const res = await fetch(`/api/soar/case/create?title=${encodeURIComponent(title)}&description=${encodeURIComponent(desc)}&severity=${sev}&assigned=SecOps%20Analyst`);
+                const d = await res.json();
+                target.innerText = d.case_id ? `SOAR Case ${d.case_id} Created` : `SOAR Case Failed`;
+                loadMasterData();
+            } catch (err) {
+                target.innerText = `SOAR Case Failed`;
+            }
         });
     });
 }

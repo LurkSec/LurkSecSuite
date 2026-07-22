@@ -266,6 +266,17 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 res = SOAR_CASES.update_case(c_id, status=status, note=note)
                 self.send_json(res)
 
+            elif path == "/api/soar/case/create":
+                title = params.get("title", ["Untitled Incident"])[0]
+                desc = params.get("description", [""])[0]
+                severity = params.get("severity", ["MEDIUM"])[0]
+                assigned = params.get("assigned", ["Unassigned"])[0]
+                new_case = SOAR_CASES.create_case(title, severity, desc, evidence=[desc] if desc else None)
+                if assigned and assigned != "Unassigned":
+                    SOAR_CASES.update_case(new_case["case_id"], assigned_to=assigned)
+                    new_case["assigned_to"] = assigned
+                self.send_json({"success": True, "case_id": new_case["case_id"], "case": new_case})
+
             elif path == "/api/hunt/summary":
                 self.send_json({
                     "sigma_rules_count": len(HUNT_SIGMA.get_rules()),
@@ -498,10 +509,6 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
         self.wfile.flush()
 
-class LurkSecServer(ThreadingHTTPServer):
-    allow_reuse_address = True
-    daemon_threads = True
-
 def main():
     parser = argparse.ArgumentParser(description="LurkSec Unified Security Operations Suite Server")
     parser.add_argument("action", nargs="?", default="serve", choices=["serve", "audit"])
@@ -528,8 +535,12 @@ def main():
             if inc["severity"] in ["HIGH", "MEDIUM"]:
                 print(f"  [{inc['engine']}] ({inc['severity']}) {inc['title']} | Evidence: {inc['evidence']}")
     else:
-        server_address = ("127.0.0.1", args.port)
-        httpd = LurkSecServer(server_address, LurkSecHandler)
+        server_address = ("", args.port)
+        try:
+            httpd = ThreadingHTTPServer(server_address, LurkSecHandler)
+        except OSError as e:
+            print(f"[-] Failed to bind port {args.port}: {e}")
+            sys.exit(1)
         url = f"http://localhost:{args.port}"
         print(f"[+] LurkSec Master Console listening on {url}")
         webbrowser.open(url)
