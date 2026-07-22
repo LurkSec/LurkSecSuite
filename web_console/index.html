@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LurkSec Master Security Operations Suite</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Header Bar -->
+        <header class="app-header">
+            <div class="header-left">
+                <span class="header-brand">LURKSEC</span>
+                <span class="header-sub">SECURITY OPERATIONS CENTER</span>
+            </div>
+            <div class="header-center">
+                <span id="sys-host-display">HOST: Loading...</span>
+                <span class="sep">|</span>
+                <span id="sys-ip-display">IP: Loading...</span>
+                <span class="sep">|</span>
+                <span id="sys-os-display">OS: Windows</span>
+                <span class="sep">|</span>
+                <span class="status-pass">[ MASTER COMMAND ACTIVE ]</span>
+            </div>
+            <div class="header-right">
+                <button id="btn-auto-refresh" class="btn btn-outline">Auto-Refresh: OFF</button>
+                <button id="btn-quick-scan" class="btn btn-outline">Refresh Suite</button>
+            </div>
+        </header>
+
+        <div class="app-body">
+            <!-- Sidebar Navigation with Clean SVG Icons -->
+            <nav class="app-sidebar">
+                <!-- 1. LurkSOC Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="soc">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>LurkSOC Command</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#soc-overview" class="nav-sub-btn active" data-tab="soc-overview">Master Threat Feed</a>
+                    </div>
+                </div>
+
+                <!-- 2. LurkSentinel Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="sentinel">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        <span>LurkSentinel</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#sentinel-sockets" class="nav-sub-btn" data-tab="sentinel-sockets">Network Sockets</a>
+                        <a href="#sentinel-portscan" class="nav-sub-btn" data-tab="sentinel-portscan">Port Scanner</a>
+                    </div>
+                </div>
+
+                <!-- 3. LurkSIEM Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="siem">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span>LurkSIEM</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#siem-events" class="nav-sub-btn" data-tab="siem-events">Event Log Stream</a>
+                        <a href="#siem-alerts" class="nav-sub-btn" data-tab="siem-alerts">Correlation Alerts</a>
+                    </div>
+                </div>
+
+                <!-- 4. LurkDecoy Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="decoy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                        <span>LurkDecoy</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#decoy-probes" class="nav-sub-btn" data-tab="decoy-probes">Captured Probes</a>
+                        <a href="#decoy-status" class="nav-sub-btn" data-tab="decoy-status">Honeypot Listeners</a>
+                    </div>
+                </div>
+
+                <!-- 5. LurkPacket Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="packet">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <span>LurkPacket</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#packet-stream" class="nav-sub-btn" data-tab="packet-stream">Packet Stream & PCAP</a>
+                        <a href="#packet-inspector" class="nav-sub-btn" data-tab="packet-inspector">Protocol Inspector</a>
+                    </div>
+                </div>
+
+                <!-- 6. LurkTrace Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="trace">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M10 7h4v11h-4"/></svg>
+                        <span>LurkTrace</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#trace-procs" class="nav-sub-btn" data-tab="trace-procs">Process Stream</a>
+                        <a href="#trace-tree" class="nav-sub-btn" data-tab="trace-tree">Process Tree Hierarchy</a>
+                    </div>
+                </div>
+
+                <!-- 7. LurkAudit Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="audit">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                        <span>LurkAudit</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#audit-checks" class="nav-sub-btn" data-tab="audit-checks">OS Hardening Checks</a>
+                    </div>
+                </div>
+
+                <!-- 8. Master Reports Parent -->
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="reports">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        <span>Master Reports</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#reports-export" class="nav-sub-btn" data-tab="reports-export">Executive Exports</a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Panel Content -->
+            <main class="app-main">
+                <!-- PAGE 1: LURKSOC MASTER THREAT FEED -->
+                <section id="tab-soc-overview" class="tab-page active">
+                    <div class="section-title">
+                        <h2>LurkSOC - Master Threat Feed</h2>
+                        <span class="section-subtitle">Real-time cross-engine incident correlation across Network, SIEM, Decoys, PCAP, Processes, and OS Hardening</span>
+                    </div>
+
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <span class="card-label">CORRELATED INCIDENTS</span>
+                            <div class="card-value" id="metric-soc-incidents">0</div>
+                            <span class="card-sub">Master Threat Feed</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="card-label">HIGH SEVERITY</span>
+                            <div class="card-value" id="metric-soc-high" style="color:#f85149;">0</div>
+                            <span class="card-sub">Immediate Action Items</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="card-label">OS HARDENING SCORE</span>
+                            <div class="card-value" id="metric-soc-score" style="color:#3fb950;">100%</div>
+                            <span class="card-sub">Windows Baseline State</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="card-label">ACTIVE ENGINES</span>
+                            <div class="card-value" style="color:#3fb950;font-size:16px;margin-top:6px;">6 ENGINES ONLINE</div>
+                            <span class="card-sub">Full Suite Monitored</span>
+                        </div>
+                    </div>
+
+                    <div class="panel-box chart-panel" style="height:250px;margin-bottom:20px;">
+                        <div class="panel-header">Cross-Engine Threat Distribution</div>
+                        <div class="chart-container" style="height:190px;">
+                            <canvas id="chart-soc-threats"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header-flex">
+                            <span>Correlated Threat Feed</span>
+                            <div class="button-group">
+                                <button id="btn-export-soc-json" class="btn btn-outline">Export Incidents (JSON)</button>
+                                <button id="btn-export-soc-md" class="btn btn-outline">Export Incidents (Markdown)</button>
+                            </div>
+                        </div>
+                        <div style="padding:10px 16px 0 16px;">
+                            <input type="text" id="soc-search-input" class="filter-input" style="width:100%;" placeholder="Filter engine, category, severity, evidence...">
+                        </div>
+                        <div id="soc-incidents-container" class="compliance-list" style="padding:16px;">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 2: LURKSENTINEL NETWORK SOCKETS -->
+                <section id="tab-sentinel-sockets" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkSentinel - Active Network Sockets</h2>
+                        <span class="section-subtitle">Listening & established TCP/UDP sockets with PID process resolution and GeoIP flags</span>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header-flex">
+                            <span>Active Network Sockets</span>
+                            <div class="button-group">
+                                <button id="btn-export-sockets-json" class="btn btn-outline">Export Sockets (JSON)</button>
+                                <button id="btn-export-sockets-csv" class="btn btn-outline">Export Sockets (CSV)</button>
+                            </div>
+                        </div>
+                        <div style="padding:10px 16px 0 16px;">
+                            <input type="text" id="socket-search-input" class="filter-input" style="width:100%;" placeholder="Filter process, IP, port, origin...">
+                        </div>
+                        <table class="raw-table" style="margin-top:10px;">
+                            <thead>
+                                <tr>
+                                    <th data-sort="id" class="sortable col-id">ID <span class="sort-icon"></span></th>
+                                    <th data-sort="protocol" class="sortable col-proto">Proto <span class="sort-icon"></span></th>
+                                    <th data-sort="local_address" class="sortable col-ip">Local Address <span class="sort-icon"></span></th>
+                                    <th data-sort="foreign_address" class="sortable col-ip">Foreign Address <span class="sort-icon"></span></th>
+                                    <th data-sort="origin" class="sortable col-origin">Origin Classification <span class="sort-icon"></span></th>
+                                    <th data-sort="process_name" class="sortable col-proc">Process Name <span class="sort-icon"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="socket-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PAGE 3: LURKSENTINEL PORT SCANNER -->
+                <section id="tab-sentinel-portscan" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkSentinel - TCP Port Scanner</h2>
+                        <span class="section-subtitle">Multithreaded local port scanner auditing listening ports</span>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header-flex">
+                            <span>TCP Port Scanner</span>
+                            <button id="btn-run-portscan" class="btn btn-primary">Execute 150-Thread Port Scan</button>
+                        </div>
+                        <div id="portscan-results-container" style="padding:16px;">
+                            <span style="color:#8b949e;">Click 'Execute 150-Thread Port Scan' to audit open system ports...</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 4: LURKSIEM EVENT STREAM -->
+                <section id="tab-siem-events" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkSIEM - Windows Event Log Stream</h2>
+                        <span class="section-subtitle">Real-time event extraction from Windows Security, System, and Application logs</span>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header-flex">
+                            <span>Windows Event Log Stream</span>
+                            <div class="button-group">
+                                <button id="btn-export-siem-json" class="btn btn-outline">Export Events (JSON)</button>
+                                <button id="btn-export-siem-csv" class="btn btn-outline">Export Events (CSV)</button>
+                            </div>
+                        </div>
+                        <div style="padding:10px 16px 0 16px;">
+                            <input type="text" id="siem-search-input" class="filter-input" style="width:100%;" placeholder="Filter Event ID, user, provider, message...">
+                        </div>
+                        <table class="raw-table" style="margin-top:10px;">
+                            <thead>
+                                <tr>
+                                    <th data-sort="timestamp" class="sortable col-time">Timestamp <span class="sort-icon">▼</span></th>
+                                    <th data-sort="event_id" class="sortable col-id">ID <span class="sort-icon"></span></th>
+                                    <th data-sort="log_name" class="sortable col-proto">Log <span class="sort-icon"></span></th>
+                                    <th data-sort="provider" class="sortable col-proc">Provider <span class="sort-icon"></span></th>
+                                    <th data-sort="user" class="sortable col-proc">User <span class="sort-icon"></span></th>
+                                    <th data-sort="message" class="sortable col-msg">Message Summary <span class="sort-icon"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="siem-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PAGE 5: LURKSIEM ALERTS -->
+                <section id="tab-siem-alerts" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkSIEM - Threat Correlation Alerts</h2>
+                        <span class="section-subtitle">Brute-force detection, logon audit failures (4625), and system service changes</span>
+                    </div>
+
+                    <div id="siem-alerts-container" class="compliance-list">
+                    </div>
+                </section>
+
+                <!-- PAGE 6: LURKDECOY CAPTURED PROBES -->
+                <section id="tab-decoy-probes" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkDecoy - Captured Intrusion Probes</h2>
+                        <span class="section-subtitle">Real-time intrusion probes captured on low-interaction honeypots</span>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header-flex">
+                            <span>Decoy Intrusions</span>
+                            <div class="button-group">
+                                <button id="btn-export-decoy-json" class="btn btn-outline">Export Probes (JSON)</button>
+                                <button id="btn-export-decoy-csv" class="btn btn-outline">Export Probes (CSV)</button>
+                            </div>
+                        </div>
+                        <div style="padding:10px 16px 0 16px;">
+                            <input type="text" id="decoy-search-input" class="filter-input" style="width:100%;" placeholder="Filter IP, port, service, payload...">
+                        </div>
+                        <table class="raw-table" style="margin-top:10px;">
+                            <thead>
+                                <tr>
+                                    <th data-sort="timestamp" class="sortable col-time">Timestamp <span class="sort-icon">▼</span></th>
+                                    <th data-sort="probe_id" class="sortable col-id">Probe ID <span class="sort-icon"></span></th>
+                                    <th data-sort="target_port" class="sortable col-proto">Decoy Port <span class="sort-icon"></span></th>
+                                    <th data-sort="source_ip" class="sortable col-ip">Attacker IP <span class="sort-icon"></span></th>
+                                    <th data-sort="origin" class="sortable col-origin">Origin Classification <span class="sort-icon"></span></th>
+                                    <th data-sort="payload" class="sortable col-msg">Payload Probe <span class="sort-icon"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="decoy-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PAGE 7: LURKDECOY LISTENERS -->
+                <section id="tab-decoy-status" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkDecoy - Active Honeypot Ports</h2>
+                        <span class="section-subtitle">Listening decoy sockets status</span>
+                    </div>
+
+                    <div class="summary-grid">
+                        <div class="summary-card"><span class="card-label">SSH DECOY</span><div class="card-value">Port 2222</div><span class="card-sub" style="color:#3fb950;">LISTENING</span></div>
+                        <div class="summary-card"><span class="card-label">FTP DECOY</span><div class="card-value">Port 2121</div><span class="card-sub" style="color:#3fb950;">LISTENING</span></div>
+                        <div class="summary-card"><span class="card-label">HTTP DECOY</span><div class="card-value">Port 8888</div><span class="card-sub" style="color:#3fb950;">LISTENING</span></div>
+                        <div class="summary-card"><span class="card-label">RDP DECOY</span><div class="card-value">Port 33890</div><span class="card-sub" style="color:#3fb950;">LISTENING</span></div>
+                    </div>
+                </section>
+
+                <!-- PAGE 8: LURKPACKET STREAM & PCAP -->
+                <section id="tab-packet-stream" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkPacket - Packet Stream & PCAP Export</h2>
+                        <span class="section-subtitle">Live packet capture stream and Wireshark .pcap file download</span>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header-flex">
+                            <span>Live Packet Stream</span>
+                            <div class="button-group">
+                                <button id="btn-export-pcap" class="btn btn-primary">Download Wireshark (.pcap)</button>
+                                <button id="btn-export-packet-json" class="btn btn-outline">Export Packets (JSON)</button>
+                            </div>
+                        </div>
+                        <table class="raw-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="timestamp" class="sortable col-time">Timestamp <span class="sort-icon">▼</span></th>
+                                    <th data-sort="packet_id" class="sortable col-id">Packet ID <span class="sort-icon"></span></th>
+                                    <th data-sort="src_ip" class="sortable col-ip">Source IP <span class="sort-icon"></span></th>
+                                    <th data-sort="dst_ip" class="sortable col-ip">Dest IP <span class="sort-icon"></span></th>
+                                    <th data-sort="protocol" class="sortable col-proto">Proto <span class="sort-icon"></span></th>
+                                    <th data-sort="message" class="sortable col-msg">Decoded Summary <span class="sort-icon"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="packet-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PAGE 9: LURKPACKET PROTOCOL INSPECTOR -->
+                <section id="tab-packet-inspector" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkPacket - Protocol Inspector</h2>
+                        <span class="section-subtitle">Decoded DNS queries, HTTP headers, and TLS SNI hostnames</span>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header">Protocol Inspector Stream</div>
+                        <table class="raw-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-time">Timestamp</th>
+                                    <th class="col-proto">Protocol</th>
+                                    <th class="col-ip">Source</th>
+                                    <th class="col-ip">Destination</th>
+                                    <th class="col-msg">Decoded Message</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inspector-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PAGE 10: LURKTRACE PROCESSES -->
+                <section id="tab-trace-procs" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkTrace - Windows Process Stream</h2>
+                        <span class="section-subtitle">Active process execution list with full command line arguments</span>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header-flex">
+                            <span>Active Processes</span>
+                            <div class="button-group">
+                                <button id="btn-export-trace-json" class="btn btn-outline">Export Processes (JSON)</button>
+                                <button id="btn-export-trace-csv" class="btn btn-outline">Export Processes (CSV)</button>
+                            </div>
+                        </div>
+                        <div style="padding:10px 16px 0 16px;">
+                            <input type="text" id="trace-search-input" class="filter-input" style="width:100%;" placeholder="Search PID, name, path, command line...">
+                        </div>
+                        <table class="raw-table" style="margin-top:10px;">
+                            <thead>
+                                <tr>
+                                    <th data-sort="pid" class="sortable col-id">PID <span class="sort-icon">▲</span></th>
+                                    <th data-sort="ppid" class="sortable col-id">PPID <span class="sort-icon"></span></th>
+                                    <th data-sort="name" class="sortable col-proc">Process Name <span class="sort-icon"></span></th>
+                                    <th data-sort="parent_name" class="sortable col-proc">Parent Process <span class="sort-icon"></span></th>
+                                    <th data-sort="path" class="sortable col-path">Executable Path <span class="sort-icon"></span></th>
+                                    <th data-sort="cmdline" class="sortable col-msg">Command Line Arguments <span class="sort-icon"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="trace-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PAGE 11: LURKTRACE PROCESS TREE -->
+                <section id="tab-trace-tree" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkTrace - Parent-Child Process Tree</h2>
+                        <span class="section-subtitle">Mapped Windows Process execution hierarchy</span>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header">Process Tree View</div>
+                        <div id="tree-view-container" class="report-box" style="font-family:var(--font-mono);font-size:12px;">
+                            Loading process tree hierarchy...
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 12: LURKAUDIT OS HARDENING CHECKS -->
+                <section id="tab-audit-checks" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkAudit - OS Hardening Baseline Checks</h2>
+                        <span class="section-subtitle">Windows Firewall profiles, User Account Control (UAC), SMBv1 legacy state, and administrative shared drives</span>
+                    </div>
+
+                    <div class="panel-box" style="margin-bottom:16px;">
+                        <div class="panel-header-flex">
+                            <span>Compliance Actions</span>
+                            <button id="btn-export-audit-json" class="btn btn-outline">Export Hardening Audit (JSON)</button>
+                        </div>
+                    </div>
+
+                    <div id="audit-list-container" class="compliance-list">
+                    </div>
+                </section>
+
+                <!-- PAGE 13: MASTER REPORTS -->
+                <section id="tab-reports-export" class="tab-page">
+                    <div class="section-title">
+                        <h2>Master Executive Reports</h2>
+                        <span class="section-subtitle">Export master security audit reports in Markdown, JSON, or HTML</span>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header-flex">
+                            <span>Export Options</span>
+                            <div class="button-group">
+                                <button id="btn-gen-markdown" class="btn btn-outline">Download Markdown</button>
+                                <button id="btn-gen-json" class="btn btn-outline">Download JSON</button>
+                                <button id="btn-print-report" class="btn btn-primary">Open HTML Report</button>
+                            </div>
+                        </div>
+                        <div class="report-box">
+                            <pre id="report-text-preview">Generating master security summary...</pre>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
