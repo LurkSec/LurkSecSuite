@@ -68,6 +68,8 @@ GUARD_ENGINE = ITDRAuditor()
 POLICY_ENGINE = EDRPolicyEngine()
 THREAT_FEED = ThreatFeedManager()
 HUNT_HITS = []
+AGENT_TELEMETRY_REGISTRY = {}
+
 
 
 class LurkSecHandler(SimpleHTTPRequestHandler):
@@ -516,8 +518,10 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
             "edr": {
                 "action_logs": EDR_ACTION_LOGS,
                 "quarantined_files": FileQuarantiner.list_quarantined_files(),
-                "policies": POLICY_ENGINE.get_rules()
+                "policies": POLICY_ENGINE.get_rules(),
+                "connected_agents": list(AGENT_TELEMETRY_REGISTRY.values())
             },
+
             "threat_feed": THREAT_FEED.get_summary(),
             "soar": {
                 "playbooks_count": len(SOAR_PLAYBOOKS.get_playbooks()),
@@ -614,10 +618,13 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 rule_id = body.get("id", "")
                 self.send_json(POLICY_ENGINE.delete_rule(rule_id))
 
-            elif path == "/api/intel/feed/sync":
-                self.send_json(THREAT_FEED.fetch_live_feed())
+            elif path == "/api/agent/telemetry":
+                agent_id = body.get("agent_id", "LURK-AGENT-01")
+                AGENT_TELEMETRY_REGISTRY[agent_id] = body
+                self.send_json({"success": True, "message": "Agent telemetry ingested successfully", "agent_id": agent_id})
 
             elif path == "/api/terminal/exec":
+
 
                 import subprocess
                 cmd_str = body.get("command", "").strip()

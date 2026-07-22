@@ -314,8 +314,33 @@ function renderEDRLogs() {
                 vaultTbody.appendChild(tr);
             });
         }
+    const agentsContainer = document.getElementById('container-connected-agents');
+    const badgeAgents = document.getElementById('badge-connected-agents');
+    const connectedAgents = edr.connected_agents || [];
+
+    if (badgeAgents) {
+        badgeAgents.innerText = `${connectedAgents.length} Active Agents Connected`;
+        badgeAgents.style.color = connectedAgents.length ? '#3fb950' : '#8b949e';
+    }
+
+    if (agentsContainer) {
+        if (!connectedAgents.length) {
+            agentsContainer.innerHTML = `<span style="color:#8b949e;font-size:12px;">No active agent nodes connected. Launch LurkAgent in Linked mode to stream live telemetry.</span>`;
+        } else {
+            agentsContainer.innerHTML = connectedAgents.map(a => `
+                <div style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <span style="font-family:var(--font-mono);font-size:11px;color:#58a6ff;">[${a.agent_id || 'LURK-AGENT'}]</span>
+                        <strong style="color:#e6edf3;font-size:13px;margin-left:8px;">${a.hostname || 'ENDPOINT-HOST'}</strong>
+                        <span style="font-size:11px;color:#8b949e;margin-left:12px;">Last Heartbeat: <code style="color:#3fb950;">${a.timestamp || 'JUST NOW'}</code> | Process Count: <code style="color:#58a6ff;">${(a.processes || []).length}</code></span>
+                    </div>
+                    <span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:#3fb950;background:rgba(63,185,80,0.15);border:1px solid #3fb950;border-radius:4px;padding:3px 10px;">● ONLINE & STREAMING</span>
+                </div>
+            `).join('');
+        }
     }
 }
+
 
 function renderSocketsTable(filteredSockets = null) {
     const tbody = document.getElementById('socket-table-body');
