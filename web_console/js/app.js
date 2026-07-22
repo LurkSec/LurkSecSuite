@@ -1230,6 +1230,96 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-tab="vuln-audit"]').forEach(btn => btn.addEventListener('click', () => setTimeout(loadVulnSuiteData, 100)));
     document.querySelectorAll('[data-tab="sand-box"]').forEach(btn => btn.addEventListener('click', () => setTimeout(loadSandSuiteData, 100)));
     document.querySelectorAll('[data-tab="guard-itdr"]').forEach(btn => btn.addEventListener('click', () => setTimeout(loadGuardSuiteData, 100)));
+
+    // Interactive Malware Sandbox Inspector
+    const sandPreset = document.getElementById('suite-sand-sample-select');
+    if (sandPreset) {
+        sandPreset.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val && val.includes('|')) {
+                const parts = val.split('|');
+                document.getElementById('suite-sand-name-input').value = parts[0];
+                document.getElementById('suite-sand-text-input').value = parts[1];
+            }
+        });
+    }
+
+    document.getElementById('btn-suite-sand-analyze')?.addEventListener('click', async () => {
+        const name = document.getElementById('suite-sand-name-input').value || 'sample.exe';
+        const text = document.getElementById('suite-sand-text-input').value || '';
+        const out = document.getElementById('suite-sand-output');
+        if (out) out.innerText = `[+] Analyzing binary '${name}' in LurkSand PE Sandbox...`;
+
+        try {
+            const res = await fetch(`/api/sand/analyze?name=${encodeURIComponent(name)}&text=${encodeURIComponent(text)}`);
+            const d = await res.json();
+            if (out) {
+                out.innerText = `[+] LurkSand PE Malware Analysis Complete:\n` +
+                    `  Sample: ${d.sample_name}\n` +
+                    `  Verdict: ${d.verdict} (Threat Score: ${d.threat_score}/100 | Entropy: ${d.entropy})\n` +
+                    `  Packed: ${d.is_packed ? 'YES (High Entropy Packer Detected)' : 'NO'}\n` +
+                    `  Suspicious APIs Found: ${d.suspicious_imports_found.join(', ') || 'None'}\n` +
+                    `  Highlights: ${d.behavioral_highlights.join(' ')}`;
+            }
+            loadSandSuiteData();
+        } catch(err) {
+            if (out) out.innerText = `[-] Sandbox analysis error: ${err.message}`;
+        }
+    });
+
+    // Interactive DNS Threat Sinkhole Inspector
+    const dnsPreset = document.getElementById('suite-dns-preset-select');
+    if (dnsPreset) {
+        dnsPreset.addEventListener('change', (e) => {
+            if (e.target.value) document.getElementById('suite-dns-input').value = e.target.value;
+        });
+    }
+
+    document.getElementById('btn-suite-dns-query')?.addEventListener('click', async () => {
+        const domain = document.getElementById('suite-dns-input').value || 'example.com';
+        const out = document.getElementById('suite-dns-output');
+        if (out) out.innerText = `[+] Querying LurkDNS Sinkhole for '${domain}'...`;
+
+        try {
+            const res = await fetch(`/api/dns/query?domain=${encodeURIComponent(domain)}`);
+            const d = await res.json();
+            if (out) {
+                out.innerText = `[+] LurkDNS Query Inspection Result:\n` +
+                    `  Domain: ${d.domain}\n` +
+                    `  Status: ${d.status} -> Resolved IP: ${d.response_ip}\n` +
+                    `  Category: ${d.category}\n` +
+                    `  Message: ${d.message}`;
+            }
+            loadDNSSuiteData();
+        } catch(err) {
+            if (out) out.innerText = `[-] DNS query error: ${err.message}`;
+        }
+    });
+
+    // Interactive Zero Trust Access Evaluator
+    document.getElementById('btn-suite-zero-eval')?.addEventListener('click', async () => {
+        const user = document.getElementById('suite-zero-user').value || 'user@lurksec.io';
+        const dev = document.getElementById('suite-zero-device').value || 'DEV-001';
+        const resource = document.getElementById('suite-zero-resource').value || '/api/vault';
+        const mtls = document.getElementById('suite-zero-mtls').value;
+        const out = document.getElementById('suite-zero-output');
+        if (out) out.innerText = `[+] Evaluating Zero Trust Access for ${user}...`;
+
+        try {
+            const res = await fetch(`/api/zero/verify?user=${encodeURIComponent(user)}&device=${encodeURIComponent(dev)}&resource=${encodeURIComponent(resource)}&mtls=${mtls}`);
+            const d = await res.json();
+            if (out) {
+                out.innerText = `[+] LurkZero ZTNA Decision:\n` +
+                    `  Access: ${d.access_granted ? 'GRANTED' : 'DENIED'} (${d.severity})\n` +
+                    `  mTLS Status: ${d.mtls_status} | Posture Score: ${d.posture_score}/100\n` +
+                    `  User: ${d.user} | Resource: ${d.resource}\n` +
+                    `  Message: ${d.message}`;
+            }
+            loadZeroSuiteData();
+        } catch(err) {
+            if (out) out.innerText = `[-] ZTNA verification error: ${err.message}`;
+        }
+    });
 });
 
 async function loadDNSSuiteData() {

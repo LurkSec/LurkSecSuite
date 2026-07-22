@@ -4,8 +4,15 @@ import time
 from typing import List, Dict, Any
 
 class ProcessAuditor:
-    @staticmethod
-    def get_live_processes() -> List[Dict[str, Any]]:
+    _CACHE_TIME = 0
+    _CACHED_PROCESSES = []
+
+    @classmethod
+    def get_live_processes(cls) -> List[Dict[str, Any]]:
+        now = time.time()
+        if now - cls._CACHE_TIME < 3 and cls._CACHED_PROCESSES:
+            return cls._CACHED_PROCESSES
+
         processes = []
         ps_script = """
         Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId, Name, ExecutablePath, CommandLine | ConvertTo-Json -Compress
@@ -65,6 +72,8 @@ class ProcessAuditor:
             ]
 
         processes.sort(key=lambda x: x["pid"])
+        cls._CACHE_TIME = now
+        cls._CACHED_PROCESSES = processes
         return processes
 
     @staticmethod

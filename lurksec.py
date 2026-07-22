@@ -495,7 +495,7 @@ def main():
             if inc["severity"] in ["HIGH", "MEDIUM"]:
                 print(f"  [{inc['engine']}] ({inc['severity']}) {inc['title']} | Evidence: {inc['evidence']}")
     else:
-        server_address = ("0.0.0.0", args.port)
+        server_address = ("127.0.0.1", args.port)
         httpd = LurkSecServer(server_address, LurkSecHandler)
         url = f"http://localhost:{args.port}"
         print(f"[+] LurkSec Master Console listening on {url}")
