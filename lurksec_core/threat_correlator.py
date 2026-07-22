@@ -6,8 +6,8 @@ class SIEMCorrelator:
 
     def evaluate_rules(self) -> Dict[str, Any]:
         alerts = []
-        failed_logons = [e for e in self.events if e.get("event_id") == 4625 or "FAILED" in e.get("message", "").upper()]
-        service_events = [e for e in self.events if e.get("event_id") in [7040, 7045] or "SERVICE" in e.get("provider", "").upper()]
+        failed_logons = [e for e in self.events if e.get("event_id") == 4625 or "FAILED" in (e.get("message") or "").upper()]
+        service_events = [e for e in self.events if e.get("event_id") in [7040, 7045] or "SERVICE" in (e.get("provider") or "").upper()]
 
         if len(failed_logons) >= 1:
             alerts.append({
