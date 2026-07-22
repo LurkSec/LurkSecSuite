@@ -83,6 +83,8 @@ HUNT_HITS = [
 ]
 
 class LurkSecHandler(SimpleHTTPRequestHandler):
+    protocol_version = "HTTP/1.0"
+
     def __init__(self, *args, **kwargs):
         web_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_console")
         super().__init__(*args, directory=web_dir, **kwargs)
