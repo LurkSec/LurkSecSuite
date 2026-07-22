@@ -301,6 +301,9 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
         packet_alerts = PacketInspector.evaluate_threats(packets)
 
         processes = ProcessAuditor.get_live_processes()
+        process_alerts = ProcessAuditor.evaluate_anomalies(processes)
+        audit_summary = SystemAuditor.audit_os_hardening()
+
         # Auto-scan live processes against SIGMA & YARA rules
         for p in processes:
             cmd = p.get("command_line", "") or p.get("name", "")
