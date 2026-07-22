@@ -108,11 +108,13 @@ function renderDashboard() {
     renderPacketTable();
     renderInspectorTable();
     renderTraceTable();
-    renderTraceTree();
+    renderProcessLineage();
     renderAuditFeed();
     renderReportPreview();
     loadSOARData();
 }
+
+
 
 function renderSOCChart() {
     const socElem = document.getElementById('chart-soc-threats');
@@ -128,16 +130,22 @@ function renderSOCChart() {
     const auditCount = (data.audit ? data.audit.audits || [] : []).filter(a => a.status !== 'PASS').length;
     const edrCount = (data.edr ? data.edr.action_logs || [] : []).length;
 
-    const ctxSoc = socElem.getContext('2d');
-    if (state.socChart) state.socChart.destroy();
+    const chartValues = [edrCount, sentinelCount, siemCount, decoyCount, packetCount, traceCount, auditCount];
 
+    if (state.socChart) {
+        state.socChart.data.datasets[0].data = chartValues;
+        state.socChart.update('none');
+        return;
+    }
+
+    const ctxSoc = socElem.getContext('2d');
     state.socChart = new Chart(ctxSoc, {
         type: 'bar',
         data: {
             labels: ['LurkEDR', 'LurkSentinel', 'LurkSIEM', 'LurkDecoy', 'LurkPacket', 'LurkTrace', 'LurkAudit'],
             datasets: [{
                 label: 'Correlated Threat Incidents',
-                data: [edrCount, sentinelCount, siemCount, decoyCount, packetCount, traceCount, auditCount],
+                data: chartValues,
                 backgroundColor: ['#f85149', '#58a6ff', '#d29922', '#f85149', '#a371f7', '#3fb950', '#f0883e']
             }]
         },
@@ -152,6 +160,7 @@ function renderSOCChart() {
         }
     });
 }
+
 
 function renderSOCFeed(filteredIncidents = null) {
     const container = document.getElementById('soc-incidents-container');
@@ -453,24 +462,31 @@ function renderTraceTable(filteredTrace = null) {
     });
 }
 
-function renderTraceTree() {
-    const container = document.getElementById('tree-view-container');
-    if (!container) return;
+function renderProcessLineage() {
+    const textContainer = document.getElementById('tree-view-container');
+    if (!textContainer) return;
+    const procs = (state.masterData && state.masterData.processes) ? state.masterData.processes : [];
+    if (!procs.length) return;
 
-    const procs = state.masterData.processes || [];
-    let treeText = `===========================================================\n`;
-    treeText += ` WINDOWS PROCESS HIERARCHY TREE (PID -> PPID -> EXEC)\n`;
-    treeText += `===========================================================\n\n`;
+    let html = `<div style="font-family:var(--font-mono);font-size:12px;line-height:1.6;">`;
+    html += `<div style="color:#8b949e;border-bottom:1px solid #21262d;padding-bottom:6px;margin-bottom:10px;">==========================================================================================<br><strong style="color:#58a6ff;">  WINDOWS PROCESS EXECUTION HIERARCHY LOG (${procs.length} ACTIVE PROCESSES TRACKED)</strong><br>==========================================================================================</div>`;
 
-    procs.slice(0, 35).forEach(p => {
-        const indent = p.ppid > 0 ? '  ├── ' : '├── ';
-        treeText += `${indent}[PID ${p.pid}] ${p.name} (Parent: ${p.parent_name} [${p.ppid}])\n`;
-        treeText += `  │    Path: ${p.path}\n`;
-        treeText += `  │    Cmd:  ${p.cmdline}\n\n`;
+    procs.forEach((p) => {
+        const isSusp = p.severity === 'HIGH';
+        const isMed = p.severity === 'MEDIUM';
+        const badge = isSusp ? '<span style="color:#f85149;font-weight:bold;">[HIGH]</span>' : (isMed ? '<span style="color:#d29922;font-weight:bold;">[MED] </span>' : '<span style="color:#3fb950;">[OK]  </span>');
+        const branch = (p.ppid > 0) ? '  ├── ' : '├── ';
+
+        html += `<div style="margin-bottom:8px;">`;
+        html += `  ${badge} <span style="color:#8b949e;">${branch}</span><strong style="color:#e6edf3;">${p.name}</strong> <span style="color:#58a6ff;">(PID: ${p.pid})</span> <span style="color:#8b949e;">← Parent: ${p.parent_name || 'System'} (PID: ${p.ppid})</span><br>`;
+        html += `  <span style="color:#484f58;">      │  Path:</span> <span style="color:#8b949e;">${p.path || p.name}</span><br>`;
+        html += `  <span style="color:#484f58;">      │  Cmd: </span> <span style="color:${isSusp ? '#f85149' : '#d29922'};background:#0d1117;padding:1px 6px;border-radius:3px;">${p.cmdline || p.path || p.name}</span>`;
+        html += `</div>`;
     });
-
-    container.innerText = treeText;
+    html += `</div>`;
+    textContainer.innerHTML = html;
 }
+
 
 function renderAuditFeed() {
     const container = document.getElementById('audit-list-container');
@@ -1704,7 +1720,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-soar-refresh')?.addEventListener('click', loadSOARData);
 });
 
-// Process Tree Graph with Vis.js & Text Fallback
+// Process Tree Graph with Vis.js (OSINT.Industries Style) & Formatted Lineage
 let processNetwork = null;
 async function renderProcessTreeGraph() {
     const container = document.getElementById('vis-process-tree');
@@ -1714,28 +1730,121 @@ async function renderProcessTreeGraph() {
         if (!res.ok) return;
         const data = await res.json();
 
-        if (textContainer && data.tree_text) {
-            textContainer.textContent = data.tree_text;
+        // 1. Formatted Syntax-Highlighted Process Lineage Log
+        if (textContainer) {
+            let items = data.tree_items || [];
+            if (!items.length && state.masterData && state.masterData.processes) {
+                items = state.masterData.processes.map(p => ({
+                    pid: p.pid,
+                    ppid: p.ppid,
+                    name: p.name,
+                    parent_name: p.parent_name || 'System',
+                    path: p.path || '',
+                    cmd: p.cmdline || p.name,
+                    severity: p.severity || 'LOW'
+                }));
+            }
+
+            if (items.length) {
+                let html = `<div style="font-family:var(--font-mono);font-size:12px;line-height:1.6;">`;
+                html += `<div style="color:#8b949e;border-bottom:1px solid #21262d;padding-bottom:6px;margin-bottom:10px;">==========================================================================================<br><strong style="color:#58a6ff;">  WINDOWS PROCESS EXECUTION HIERARCHY LOG (${items.length} ACTIVE PROCESSES TRACKED)</strong><br>==========================================================================================</div>`;
+
+                items.forEach((item) => {
+                    const isSusp = item.severity === 'HIGH';
+                    const isMed = item.severity === 'MEDIUM';
+                    const badge = isSusp ? '<span style="color:#f85149;font-weight:bold;">[HIGH]</span>' : (isMed ? '<span style="color:#d29922;font-weight:bold;">[MED] </span>' : '<span style="color:#3fb950;">[OK]  </span>');
+                    const branch = (item.ppid > 0) ? '  ├── ' : '├── ';
+
+                    html += `<div style="margin-bottom:8px;">`;
+                    html += `  ${badge} <span style="color:#8b949e;">${branch}</span><strong style="color:#e6edf3;">${item.name}</strong> <span style="color:#58a6ff;">(PID: ${item.pid})</span> <span style="color:#8b949e;">← Parent: ${item.parent_name} (PID: ${item.ppid})</span><br>`;
+                    html += `  <span style="color:#484f58;">      │  Path:</span> <span style="color:#8b949e;">${item.path || item.name}</span><br>`;
+                    html += `  <span style="color:#484f58;">      │  Cmd: </span> <span style="color:${isSusp ? '#f85149' : '#d29922'};background:#0d1117;padding:1px 6px;border-radius:3px;">${item.cmd}</span>`;
+                    html += `</div>`;
+                });
+                html += `</div>`;
+                textContainer.innerHTML = html;
+            } else if (data.tree_text) {
+                textContainer.textContent = data.tree_text;
+            }
         }
 
+
+        // 2. OSINT.Industries Sleek Node Network Graph
         if (container && window.vis) {
-            const nodes = new vis.DataSet(data.nodes.map(n => ({
-                id: n.id,
-                label: n.label,
-                title: n.title,
-                color: n.group === 'suspicious' ? { background: '#f85149', border: '#da3633' } : { background: '#1f6feb', border: '#388bfd' },
-                font: { color: '#ffffff', face: 'JetBrains Mono', size: 12 }
+            const nodes = new vis.DataSet(data.nodes.map(n => {
+                const isSusp = n.group === 'suspicious';
+                const isWarn = n.group === 'warning';
+                return {
+                    id: n.id,
+                    label: n.label,
+                    title: n.title,
+                    shape: 'box',
+                    shapeProperties: { borderRadius: 6 },
+                    margin: { top: 8, bottom: 8, left: 14, right: 14 },
+                    borderWidth: isSusp ? 2 : 1,
+                    shadow: { enabled: true, color: 'rgba(0,0,0,0.4)', size: 8, x: 2, y: 3 },
+                    color: {
+                        background: isSusp ? '#2d1517' : (isWarn ? '#261c14' : '#161b22'),
+                        border: isSusp ? '#f85149' : (isWarn ? '#d29922' : '#30363d'),
+                        highlight: { background: '#1f6feb', border: '#58a6ff' },
+                        hover: { background: '#21262d', border: '#58a6ff' }
+                    },
+                    font: {
+                        color: isSusp ? '#f85149' : (isWarn ? '#d29922' : '#e6edf3'),
+                        face: 'JetBrains Mono, monospace',
+                        size: 11,
+                        bold: true
+                    }
+                };
+            }));
+
+            const edges = new vis.DataSet(data.edges.map(e => ({
+                from: e.from,
+                to: e.to,
+                arrows: { to: { enabled: true, scaleFactor: 0.7 } },
+                smooth: { type: 'continuous', roundness: 0.5 },
+                color: { color: '#30363d', highlight: '#58a6ff', hover: '#58a6ff' },
+                width: 1.5
             })));
-            const edges = new vis.DataSet(data.edges.map(e => ({ from: e.from, to: e.to, arrows: 'to', color: '#8b949e' })));
+
             const options = {
-                physics: { solver: 'forceAtlas2Based', forceAtlas2Based: { gravitationalConstant: -30 } },
-                interaction: { hover: true, tooltipDelay: 100 }
+                physics: {
+                    solver: 'forceAtlas2Based',
+                    forceAtlas2Based: {
+                        gravitationalConstant: -50,
+                        centralGravity: 0.01,
+                        springLength: 100,
+                        springConstant: 0.08
+                    },
+                    stabilization: { iterations: 100 }
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 50,
+                    zoomView: true,
+                    dragView: true,
+                    navigationButtons: true
+                }
             };
+
             if (processNetwork) processNetwork.destroy();
             processNetwork = new vis.Network(container, { nodes, edges }, options);
+
+            setTimeout(() => {
+                if (processNetwork) {
+                    processNetwork.fit({ animation: { duration: 300 } });
+                    processNetwork.moveTo({ scale: 0.9 });
+                }
+            }, 200);
+
+
         }
     } catch(e) { console.warn('Process Tree Graph error:', e); }
 }
+
+
+
+
 
 
 // EDR Policy Engine Handlers
@@ -1867,12 +1976,37 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') execTerminalCmd();
     });
 
+    const btnLineage = document.getElementById('btn-view-lineage');
+    const btnNodeGraph = document.getElementById('btn-view-nodegraph');
+    const wrapLineage = document.getElementById('wrapper-tree-lineage');
+    const wrapNodeGraph = document.getElementById('wrapper-tree-nodegraph');
+
+    if (btnLineage && btnNodeGraph) {
+        btnLineage.addEventListener('click', () => {
+            wrapLineage.style.display = 'block';
+            wrapNodeGraph.style.display = 'none';
+            btnLineage.className = 'btn btn-primary';
+            btnNodeGraph.className = 'btn btn-outline';
+        });
+
+        btnNodeGraph.addEventListener('click', () => {
+            wrapLineage.style.display = 'none';
+            wrapNodeGraph.style.display = 'block';
+            btnNodeGraph.className = 'btn btn-primary';
+            btnLineage.className = 'btn btn-outline';
+            renderProcessTreeGraph();
+        });
+    }
+
     document.querySelectorAll('[data-tab="trace-tree"]').forEach(btn => {
-        btn.addEventListener('click', () => setTimeout(renderProcessTreeGraph, 150));
+        btn.addEventListener('click', () => {
+            renderProcessTreeGraph();
+        });
     });
 
     loadEDRPolicies();
     setTimeout(renderProcessTreeGraph, 800);
 });
+
 
 

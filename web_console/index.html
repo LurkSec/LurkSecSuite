@@ -716,26 +716,37 @@
 
                 <!-- PAGE 13: LURKTRACE PROCESS TREE -->
                 <section id="tab-trace-tree" class="tab-page">
+
                     <div class="section-title">
-                        <h2>LurkTrace - Parent-Child Process Tree Graph</h2>
-                        <span class="section-subtitle">Interactive visual node graph & text hierarchy mapping Windows process execution</span>
+                        <h2>LurkTrace - Parent-Child Process Hierarchy</h2>
+                        <span class="section-subtitle">Windows process execution lineage & interactive node network graph</span>
                     </div>
 
-                    <div class="panel-box" style="margin-bottom:16px;">
+                    <div class="panel-box" style="min-height:calc(100vh - 220px);">
                         <div class="panel-header-flex">
-                            <span>Visual Process Node Graph</span>
-                            <button id="btn-refresh-tree" class="btn btn-secondary" style="font-size:11px;padding:4px 10px;">Refresh Process Tree</button>
+                            <span>Process Hierarchy & Network Tree</span>
+                            <div class="button-group">
+                                <button id="btn-view-lineage" class="btn btn-primary" style="font-size:11px;padding:4px 12px;">Text Lineage</button>
+                                <button id="btn-view-nodegraph" class="btn btn-outline" style="font-size:11px;padding:4px 12px;">Interactive Node Graph</button>
+                                <button id="btn-refresh-tree" class="btn btn-secondary" style="font-size:11px;padding:4px 10px;">Refresh</button>
+                            </div>
                         </div>
-                        <div id="vis-process-tree" style="height:420px;background:#0d1117;border:1px solid #21262d;border-radius:6px;"></div>
+
+                        <!-- 1. Default View: Text Lineage Log -->
+                        <div id="wrapper-tree-lineage" style="padding:12px;">
+                            <div class="report-box" style="padding:12px;">
+                                <pre id="tree-view-container" style="font-family:var(--font-mono);font-size:11px;color:#58a6ff;margin:0;max-height:calc(100vh - 270px);min-height:680px;overflow-y:auto;white-space:pre-wrap;">Loading process execution hierarchy...</pre>
+                            </div>
+                        </div>
+
+                        <!-- 2. Selectable View: Interactive Node Graph (Hidden by Default) -->
+                        <div id="wrapper-tree-nodegraph" style="display:none;padding:12px;">
+                            <div id="vis-process-tree" style="height:calc(100vh - 270px);min-height:680px;background:#0d1117;border:1px solid #21262d;border-radius:6px;"></div>
+                        </div>
                     </div>
 
-                    <div class="panel-box">
-                        <div class="panel-header">Process Parent-Child Execution Lineage Log</div>
-                        <div class="report-box" style="padding:12px;">
-                            <pre id="tree-view-container" style="font-family:var(--font-mono);font-size:11px;color:#58a6ff;margin:0;max-height:300px;overflow-y:auto;white-space:pre-wrap;">Loading process execution hierarchy...</pre>
-                        </div>
-                    </div>
                 </section>
+
 
 
 

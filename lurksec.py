@@ -163,33 +163,67 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 tree_lines = []
                 pid_dict = {p["pid"]: p for p in procs}
 
+                # Find parent processes that actually have children
+                parent_counts = {}
                 for p in procs:
+                    pp = p.get("ppid", 0)
+                    parent_counts[pp] = parent_counts.get(pp, 0) + 1
+
+                # Include processes that are parent of multiple children or high/medium risk or shell executables
+                active_parents = set(pp for pp, count in parent_counts.items() if count > 0 and pp != 0)
+
+                relevant_procs = [
+                    p for p in procs
+                    if p.get("pid") in active_parents
+                    or p.get("ppid") in active_parents
+                    or p.get("severity") in ["HIGH", "MEDIUM"]
+                    or p.get("name", "").lower() in ["powershell.exe", "cmd.exe", "explorer.exe", "mimikatz.exe"]
+                ]
+                if len(relevant_procs) > 45:
+                    relevant_procs = relevant_procs[:45]
+
+                rel_pids = set(p["pid"] for p in relevant_procs)
+
+
+                for p in relevant_procs:
                     pid = p.get("pid")
                     ppid = p.get("ppid", 0)
                     name = p.get("name", "Unknown")
                     cmd = p.get("cmdline") or p.get("command_line") or name
                     parent_name = p.get("parent_name") or (pid_dict.get(ppid, {}).get("name") if ppid in pid_dict else "System")
 
-                    is_susp = any(s in cmd.lower() for s in ["-enc", "bypass", "downloadstring", "mimikatz", "temp"])
+                    is_susp = p.get("severity") == "HIGH" or any(s in cmd.lower() for s in ["-enc", "bypass", "downloadstring", "mimikatz", "temp"])
+                    is_med = p.get("severity") == "MEDIUM"
+
+                    group = "suspicious" if is_susp else ("warning" if is_med else "normal")
+
                     nodes.append({
                         "id": pid,
-                        "label": f"{name}\n({pid})",
-                        "title": f"PID: {pid} | PPID: {ppid}\nParent: {parent_name}\nCmd: {cmd}",
-                        "group": "suspicious" if is_susp else "normal"
+                        "label": f"{name}\nPID: {pid}",
+                        "title": f"Process: {name}\nPID: {pid} | PPID: {ppid}\nParent: {parent_name}\nCmd: {cmd}",
+                        "group": group
                     })
-                    if ppid and ppid in pid_dict:
+
+                    if ppid and ppid in rel_pids:
                         edges.append({"from": ppid, "to": pid})
 
-                    tree_lines.append(f"[{'HIGH' if is_susp else 'OK'}] {parent_name} (PID {ppid}) ──► {name} (PID {pid}) | {cmd[:90]}")
+                    branch = "├── " if ppid in rel_pids else "└── "
+                    tree_lines.append({
+                        "pid": pid,
+                        "ppid": ppid,
+                        "name": name,
+                        "parent_name": parent_name,
+                        "cmd": cmd,
+                        "path": p.get("path", ""),
+                        "severity": p.get("severity", "LOW")
+                    })
 
                 self.send_json({
                     "nodes": nodes,
                     "edges": edges,
-                    "tree_text": "\n".join(tree_lines),
+                    "tree_items": tree_lines,
                     "total_processes": len(procs)
                 })
-
-
 
             elif path == "/api/shield/inspect":
                 from urllib.parse import unquote
