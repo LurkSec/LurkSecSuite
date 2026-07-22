@@ -41,6 +41,12 @@ from lurksec_core.soar_engine.case_manager import CaseManager
 from lurksec_core.hunt_engine.sigma_evaluator import SigmaEvaluator
 from lurksec_core.hunt_engine.yara_scanner import YaraScanner
 
+from lurksec_core.dns_engine.dns_sinkhole import DNSSinkhole
+from lurksec_core.zero_engine.zero_trust import ZeroTrustEngine
+from lurksec_core.vuln_engine.vuln_scanner import VulnerabilityScanner
+from lurksec_core.sand_engine.malware_sandbox import MalwareSandbox
+from lurksec_core.guard_engine.itdr_auditor import ITDRAuditor
+
 # Global Managers
 DECOY_MANAGER = HoneypotManager()
 DECOY_MANAGER.start_all()
@@ -53,6 +59,12 @@ SOAR_PLAYBOOKS = PlaybookRunner()
 SOAR_CASES = CaseManager()
 HUNT_SIGMA = SigmaEvaluator()
 HUNT_YARA = YaraScanner()
+
+DNS_ENGINE = DNSSinkhole()
+ZERO_ENGINE = ZeroTrustEngine()
+VULN_ENGINE = VulnerabilityScanner()
+SAND_ENGINE = MalwareSandbox()
+GUARD_ENGINE = ITDRAuditor()
 HUNT_HITS = [
     {
         "rule_id": "SIGMA-001",
@@ -271,6 +283,78 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                     HUNT_HITS.insert(0, match)
                 self.send_json({"matches_count": len(combined), "results": combined})
 
+            # ─── LurkDNS & LurkZero & LurkVuln & LurkSand & LurkGuard Endpoints ────
+            elif path == "/api/dns/summary":
+                self.send_json(DNS_ENGINE.get_summary())
+
+            elif path == "/api/dns/query":
+                domain = params.get("domain", ["example.com"])[0]
+                ip = params.get("ip", ["127.0.0.1"])[0]
+                self.send_json(DNS_ENGINE.inspect_query(domain, client_ip=ip))
+
+            elif path == "/api/zero/summary":
+                self.send_json(ZERO_ENGINE.get_summary())
+
+            elif path == "/api/zero/verify":
+                user = params.get("user", ["analyst@lurksec.io"])[0]
+                dev = params.get("device", ["DEV-HOST-001"])[0]
+                res_url = params.get("resource", ["/api/vault"])[0]
+                mtls = params.get("mtls", ["true"])[0].lower() == "true"
+                self.send_json(ZERO_ENGINE.verify_access(user, dev, res_url, mtls_valid=mtls))
+
+            elif path == "/api/vuln/summary":
+                self.send_json(VULN_ENGINE.audit_system_vulnerabilities())
+
+            elif path == "/api/sand/summary":
+                self.send_json(SAND_ENGINE.get_summary())
+
+            elif path == "/api/sand/analyze":
+                name = params.get("name", ["payload.exe"])[0]
+                text = params.get("text", [""])[0]
+                self.send_json(SAND_ENGINE.analyze_binary(name, sample_text=text))
+
+            elif path == "/api/guard/summary":
+                self.send_json(GUARD_ENGINE.audit_identity_threats())
+
+            elif path == "/api/simulate":
+                sim_type = params.get("type", ["ransomware"])[0]
+                now_str = time.strftime("%Y-%m-%d %H:%M:%S")
+
+                if sim_type == "ransomware":
+                    hit = {
+                        "rule_id": "SIGMA-008",
+                        "title": "Volume Shadow Copy Deletion (Ransomware Test Injection)",
+                        "category": "Impact",
+                        "severity": "CRITICAL",
+                        "source": "SOC Telemetry Generator",
+                        "matched_sample": "vssadmin.exe delete shadows /all /quiet"
+                    }
+                    HUNT_HITS.insert(0, hit)
+                    SOAR_CASES.create_case("Simulated Ransomware VSS Deletion Detected", "High-severity shadow copy deletion injected via SOC Telemetry Validation Tester.", "CRITICAL", "LurkSOAR Engine")
+                    self.send_json({"success": True, "message": "Injected Ransomware VSS Deletion Telemetry. LurkHunt Hit & LurkSOAR Case Spawned."})
+
+                elif sim_type == "waf_sqli":
+                    WAF_BLOCK_LOG.insert(0, {
+                        "timestamp": now_str,
+                        "rule_matched": "RULE-WAF-001 (SQL Injection Pattern 'UNION SELECT')",
+                        "ip": "198.51.100.44",
+                        "uri": "/api/users?id=1%20UNION%20SELECT%20username,password%20FROM%20users"
+                    })
+                    self.send_json({"success": True, "message": "Injected WAF SQLi Payload Telemetry. Logged into LurkShield Block Log."})
+
+                else: # honeypot
+                    DECOY_MANAGER.get_summary()["intrusions"].insert(0, {
+                        "probe_id": "999",
+                        "timestamp": now_str,
+                        "service": "SSH-Honeypot",
+                        "target_port": 2222,
+                        "source_ip": "203.0.113.88",
+                        "origin": "Remote Probe",
+                        "payload": "root:admin1234",
+                        "severity": "HIGH"
+                    })
+                    self.send_json({"success": True, "message": "Injected Honeypot Deception Probe Telemetry into LurkDecoy."})
+
             elif path == "/api/report/json":
                 summary = self.get_master_summary()
                 rep = MasterReportGenerator(summary)
@@ -317,9 +401,16 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                     if not any(h.get("matched_sample") == m.get("matched_sample") or h.get("sig_id") == m.get("sig_id") for h in HUNT_HITS):
                         HUNT_HITS.insert(0, m)
 
+        dns_sum = DNS_ENGINE.get_summary()
+        zero_sum = ZERO_ENGINE.get_summary()
+        vuln_sum = VULN_ENGINE.audit_system_vulnerabilities()
+        sand_sum = SAND_ENGINE.get_summary()
+        guard_sum = GUARD_ENGINE.audit_identity_threats()
+
         soc_incidents = SOCAggregator.aggregate_incidents(
             sockets, siem_alerts, decoy_summary, packet_alerts, process_alerts, audit_summary,
-            edr_logs=EDR_ACTION_LOGS, waf_logs=WAF_BLOCK_LOG, soar_cases=SOAR_CASES.get_cases(), hunt_hits=HUNT_HITS
+            edr_logs=EDR_ACTION_LOGS, waf_logs=WAF_BLOCK_LOG, soar_cases=SOAR_CASES.get_cases(), hunt_hits=HUNT_HITS,
+            dns_summary=dns_sum, zero_summary=zero_sum, vuln_summary=vuln_sum, sand_summary=sand_sum, guard_summary=guard_sum
         )
 
         return {
@@ -347,7 +438,12 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 "sigma_rules_count": len(HUNT_SIGMA.get_rules()),
                 "yara_sigs_count": len(HUNT_YARA.get_signatures()),
                 "hits_count": len(HUNT_HITS)
-            }
+            },
+            "dns": dns_sum,
+            "zero": zero_sum,
+            "vuln": vuln_sum,
+            "sand": sand_sum,
+            "guard": guard_sum
         }
 
     def send_json(self, data):

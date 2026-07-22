@@ -3,7 +3,7 @@ from typing import Dict, List, Any
 
 class SOCAggregator:
     """
-    LurkSOC: Master Incident Command Feed correlating telemetry across all 13 sub-engines.
+    LurkSOC: Master Incident Command Feed correlating telemetry across all 18 sub-engines.
     """
 
     @staticmethod
@@ -20,7 +20,12 @@ class SOCAggregator:
         identity_findings: List[Dict[str, Any]] = None,
         cloud_findings: List[Dict[str, Any]] = None,
         soar_cases: List[Dict[str, Any]] = None,
-        hunt_hits: List[Dict[str, Any]] = None
+        hunt_hits: List[Dict[str, Any]] = None,
+        dns_summary: Dict[str, Any] = None,
+        zero_summary: Dict[str, Any] = None,
+        vuln_summary: Dict[str, Any] = None,
+        sand_summary: Dict[str, Any] = None,
+        guard_summary: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         incidents = []
         now_str = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -36,7 +41,9 @@ class SOCAggregator:
                 "title": f"Unauthorized Probe on {p['service']} (Port {p['target_port']})",
                 "severity": p["severity"],
                 "origin": p["origin"],
-                "evidence": f"Attacker IP: {p['source_ip']} | Payload: {p['payload']}"
+                "evidence": f"Attacker IP: {p['source_ip']} | Payload: {p['payload']}",
+                "action_type": "BLOCK_IP",
+                "target_ip": p["source_ip"]
             })
 
         # 2. Collect SIEM Correlation Alerts (LurkSIEM)
@@ -67,35 +74,97 @@ class SOCAggregator:
                     "evidence": pr["evidence"]
                 })
 
-        # 4. Collect Packet Security Alerts (LurkPacket)
-        for pa in packet_alerts.get("alerts", []):
-            if pa["rule_id"] != "ALERT-PASS":
+        # 4. Collect Threat Hunting Matches (LurkHunt)
+        if hunt_hits:
+            for hh in hunt_hits:
                 incidents.append({
-                    "incident_id": f"INC-PKT-{pa['rule_id']}",
+                    "incident_id": f"INC-HUNT-{hh.get('rule_id') or hh.get('sig_id')}",
                     "timestamp": now_str,
-                    "engine": "LurkPacket",
-                    "category": pa["category"],
-                    "title": pa["title"],
-                    "severity": pa["severity"],
-                    "origin": "Network Frame",
-                    "evidence": pa["evidence"]
+                    "engine": "LurkHunt",
+                    "category": "Threat Detection",
+                    "title": f"Rule Match: {hh.get('title') or hh.get('sig_name')}",
+                    "severity": hh.get("severity", "HIGH"),
+                    "origin": hh.get("source", "Memory/Disk"),
+                    "evidence": f"Matched Payload: {hh.get('matched_sample') or hh.get('matched_pattern')}"
                 })
 
-        # 5. Collect OS Hardening Warnings (LurkAudit)
-        for au in audit_summary.get("audits", []):
-            if au["status"] in ["WARN", "FAIL"]:
+        # 5. Collect DNS C2 Sinkhole Blocks (LurkDNS)
+        if dns_summary:
+            for dq in dns_summary.get("recent_queries", []):
+                if dq.get("status") == "SINKHOLED":
+                    incidents.append({
+                        "incident_id": f"INC-DNS-{dq.get('query_type')}",
+                        "timestamp": dq.get("timestamp", now_str),
+                        "engine": "LurkDNS",
+                        "category": "DNS C2 Interception",
+                        "title": f"Malicious Domain Blocked: {dq.get('domain')}",
+                        "severity": "HIGH",
+                        "origin": f"Client {dq.get('client_ip')}",
+                        "evidence": f"Resolved 127.0.0.1 (Category: {dq.get('category')})",
+                        "action_type": "BLOCK_IP",
+                        "target_ip": dq.get("client_ip")
+                    })
+
+        # 6. Collect Zero Trust Denials (LurkZero)
+        if zero_summary:
+            for zt in zero_summary.get("recent_evaluations", []):
+                if not zt.get("access_granted"):
+                    incidents.append({
+                        "incident_id": f"INC-ZERO-{int(time.time())}",
+                        "timestamp": zt.get("timestamp", now_str),
+                        "engine": "LurkZero",
+                        "category": "Zero Trust Denial",
+                        "title": f"Access Refused: {zt.get('user')}",
+                        "severity": "HIGH",
+                        "origin": f"Resource: {zt.get('resource')}",
+                        "evidence": f"mTLS Status: {zt.get('mtls_status')} | Posture Score: {zt.get('posture_score')}"
+                    })
+
+        # 7. Collect Vulnerability Warnings (LurkVuln)
+        if vuln_summary:
+            for vn in vuln_summary.get("findings", []):
+                if vn.get("status") == "UNPATCHED" and vn.get("severity") in ["CRITICAL", "HIGH"]:
+                    incidents.append({
+                        "incident_id": f"INC-VULN-{vn.get('cve')}",
+                        "timestamp": now_str,
+                        "engine": "LurkVuln",
+                        "category": "Vulnerability Exposure",
+                        "title": f"Unpatched CVE: {vn.get('cve')} ({vn.get('title')})",
+                        "severity": vn.get("severity"),
+                        "origin": vn.get("component"),
+                        "evidence": f"CVSS {vn.get('cvss')} | Needed KB Patch: {vn.get('kb_needed')}"
+                    })
+
+        # 8. Collect Malware Sandbox Verdicts (LurkSand)
+        if sand_summary:
+            for sa in sand_summary.get("recent_analyses", []):
+                if sa.get("verdict") in ["MALICIOUS", "SUSPICIOUS"]:
+                    incidents.append({
+                        "incident_id": f"INC-SAND-{sa.get('sample_name')[:10]}",
+                        "timestamp": sa.get("timestamp", now_str),
+                        "engine": "LurkSand",
+                        "category": "Malware Sandbox Verdict",
+                        "title": f"Malicious Binary Analyzed: {sa.get('sample_name')}",
+                        "severity": "HIGH" if sa.get("verdict") == "MALICIOUS" else "MEDIUM",
+                        "origin": "PE Analyzer",
+                        "evidence": f"Verdict: {sa.get('verdict')} (Entropy: {sa.get('entropy')} | Threat Score: {sa.get('threat_score')})"
+                    })
+
+        # 9. Collect Active Directory ITDR Risks (LurkGuard)
+        if guard_summary:
+            for gd in guard_summary.get("findings", []):
                 incidents.append({
-                    "incident_id": f"INC-AUD-{au['audit_id']}",
+                    "incident_id": f"INC-GUARD-{gd.get('id')}",
                     "timestamp": now_str,
-                    "engine": "LurkAudit",
-                    "category": "OS Hardening",
-                    "title": f"Hardening Warning: {au['component']}",
-                    "severity": au["severity"],
-                    "origin": "OS Baseline",
-                    "evidence": au["details"]
+                    "engine": "LurkGuard",
+                    "category": "Identity Threat Detection",
+                    "title": f"Identity Risk: {gd.get('name')}",
+                    "severity": gd.get("severity"),
+                    "origin": f"Account: {gd.get('account')}",
+                    "evidence": f"SPN: {gd.get('spn')} | Recommendation: {gd.get('recommendation')}"
                 })
 
-        # 6. Collect EDR Action Logs (LurkEDR)
+        # 10. Collect EDR Actions (LurkEDR)
         if edr_logs:
             for ed in edr_logs:
                 incidents.append({
@@ -109,36 +178,7 @@ class SOCAggregator:
                     "evidence": f"Target: {ed.get('target')} | Outcome: {ed.get('message')}"
                 })
 
-        # 7. Collect Threat Hunting Matches (LurkHunt)
-        if hunt_hits:
-            for hh in hunt_hits:
-                incidents.append({
-                    "incident_id": f"INC-HUNT-{hh.get('rule_id') or hh.get('sig_id')}",
-                    "timestamp": now_str,
-                    "engine": "LurkHunt",
-                    "category": "Threat Detection",
-                    "title": f"Rule Match: {hh.get('title') or hh.get('sig_name')}",
-                    "severity": hh.get("severity", "HIGH"),
-                    "origin": hh.get("source", "Memory/Disk"),
-                    "evidence": f"Matched Sample: {hh.get('matched_sample') or hh.get('matched_pattern')}"
-                })
-
-        # 8. Collect SOAR Incident Cases (LurkSOAR)
-        if soar_cases:
-            for sc in soar_cases:
-                if sc.get("status") in ["OPEN", "IN_PROGRESS"]:
-                    incidents.append({
-                        "incident_id": f"INC-SOAR-{sc['case_id']}",
-                        "timestamp": sc.get("created_at", now_str),
-                        "engine": "LurkSOAR",
-                        "category": "SOC Case Management",
-                        "title": f"Active Case: {sc['title']}",
-                        "severity": sc.get("severity", "MEDIUM"),
-                        "origin": f"Assigned: {sc.get('assigned_to')}",
-                        "evidence": sc.get("description", "")
-                    })
-
-        # 9. Collect WAF Block Events (LurkShield)
+        # 11. Collect WAF Block Events (LurkShield)
         if waf_logs:
             for wf in waf_logs:
                 incidents.append({
@@ -162,12 +202,12 @@ class SOCAggregator:
                 "title": "Master Incident Feed Baseline Clean",
                 "severity": "LOW",
                 "origin": "LurkSec Command Suite",
-                "evidence": "Zero high-risk security threats detected across all 13 engines."
+                "evidence": "Zero high-risk security threats detected across all 18 engines."
             })
 
-        high_count = sum(1 for i in incidents if i["severity"] == "HIGH")
+        high_count = sum(1 for i in incidents if i["severity"] in ["HIGH", "CRITICAL"])
         med_count = sum(1 for i in incidents if i["severity"] == "MEDIUM")
-        low_count = sum(1 for i in incidents if i["severity"] == "LOW")
+        low_count = sum(1 for i in incidents if i["severity"] in ["LOW", "PASS"])
 
         return {
             "total_incidents": len(incidents),

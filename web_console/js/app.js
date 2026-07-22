@@ -1184,3 +1184,141 @@ function renderYaraSignatures(sigs) {
         </div>
     `).join("");
 }
+
+// Telemetry Validation Simulator Handlers
+document.addEventListener('DOMContentLoaded', () => {
+    const txt = document.getElementById('sim-status-text');
+
+    document.getElementById('btn-sim-ransomware')?.addEventListener('click', async () => {
+        if (txt) txt.innerText = 'Injecting Ransomware VSS Deletion Event...';
+        const res = await fetch('/api/simulate?type=ransomware');
+        const data = await res.json();
+        if (txt) txt.innerText = data.message;
+        loadMasterData();
+    });
+
+    document.getElementById('btn-sim-waf')?.addEventListener('click', async () => {
+        if (txt) txt.innerText = 'Injecting WAF SQLi Payload...';
+        const res = await fetch('/api/simulate?type=waf_sqli');
+        const data = await res.json();
+        if (txt) txt.innerText = data.message;
+        loadMasterData();
+    });
+
+    document.getElementById('btn-sim-decoy')?.addEventListener('click', async () => {
+        if (txt) txt.innerText = 'Injecting Honeypot Probe Telemetry...';
+        const res = await fetch('/api/simulate?type=honeypot');
+        const data = await res.json();
+        if (txt) txt.innerText = data.message;
+        loadMasterData();
+    });
+
+    document.querySelectorAll('[data-tab="dns-sinkhole"]').forEach(btn => btn.addEventListener('click', () => setTimeout(loadDNSSuiteData, 100)));
+    document.querySelectorAll('[data-tab="zero-trust"]').forEach(btn => btn.addEventListener('click', () => setTimeout(loadZeroSuiteData, 100)));
+    document.querySelectorAll('[data-tab="vuln-audit"]').forEach(btn => btn.addEventListener('click', () => setTimeout(loadVulnSuiteData, 100)));
+    document.querySelectorAll('[data-tab="sand-box"]').forEach(btn => btn.addEventListener('click', () => setTimeout(loadSandSuiteData, 100)));
+    document.querySelectorAll('[data-tab="guard-itdr"]').forEach(btn => btn.addEventListener('click', () => setTimeout(loadGuardSuiteData, 100)));
+});
+
+async function loadDNSSuiteData() {
+    try {
+        const res = await fetch('/api/dns/summary'); const d = await res.json();
+        document.getElementById('suite-dns-total').innerText = d.total_queries || 0;
+        document.getElementById('suite-dns-sinkholed').innerText = d.sinkholed_queries || 0;
+        document.getElementById('suite-dns-bad-count').innerText = d.blocked_domains_count || 8;
+        const c = document.getElementById('suite-dns-query-container');
+        if (c) {
+            c.innerHTML = (d.recent_queries || []).map(q => `
+                <div class="compliance-card ${q.status === 'SINKHOLED' ? 'HIGH' : 'PASS'}">
+                    <div class="compliance-header">
+                        <span class="compliance-title"><strong>[${q.status}]</strong> ${q.domain} (${q.query_type})</span>
+                        <span class="compliance-tag ${q.status === 'SINKHOLED' ? 'HIGH' : 'PASS'}">${q.status}</span>
+                    </div>
+                    <div class="compliance-desc">Client: <code>${q.client_ip}</code> | Response IP: <code>${q.response_ip}</code> | Category: ${q.category}</div>
+                </div>
+            `).join("");
+        }
+    } catch(e) {}
+}
+
+async function loadZeroSuiteData() {
+    try {
+        const res = await fetch('/api/zero/summary'); const d = await res.json();
+        document.getElementById('suite-zero-total').innerText = d.total_evaluations || 0;
+        document.getElementById('suite-zero-granted').innerText = d.access_granted_count || 0;
+        document.getElementById('suite-zero-denied').innerText = d.access_denied_count || 0;
+        const c = document.getElementById('suite-zero-logs-container');
+        if (c) {
+            c.innerHTML = (d.recent_evaluations || []).map(z => `
+                <div class="compliance-card ${z.access_granted ? 'PASS' : 'HIGH'}">
+                    <div class="compliance-header">
+                        <span class="compliance-title"><strong>[${z.access_granted ? 'GRANTED' : 'DENIED'}]</strong> ${z.user} on ${z.resource}</span>
+                        <span class="compliance-tag ${z.access_granted ? 'PASS' : 'HIGH'}">${z.mtls_status}</span>
+                    </div>
+                    <div class="compliance-desc">Device ID: <code>${z.device_id}</code> | Posture Score: <strong>${z.posture_score}</strong> | Time: ${z.timestamp}</div>
+                </div>
+            `).join("");
+        }
+    } catch(e) {}
+}
+
+async function loadVulnSuiteData() {
+    try {
+        const res = await fetch('/api/vuln/summary'); const d = await res.json();
+        document.getElementById('suite-vuln-score').innerText = `${d.patch_compliance_score}%`;
+        document.getElementById('suite-vuln-unpatched').innerText = d.unpatched_count || 0;
+        document.getElementById('suite-vuln-critical').innerText = d.critical_count || 0;
+        const c = document.getElementById('suite-vuln-findings-container');
+        if (c) {
+            c.innerHTML = (d.findings || []).map(v => `
+                <div class="compliance-card ${v.status === 'UNPATCHED' ? v.severity : 'PASS'}">
+                    <div class="compliance-header">
+                        <span class="compliance-title"><strong>[${v.cve}]</strong> ${v.title}</span>
+                        <span class="compliance-tag ${v.status === 'UNPATCHED' ? v.severity : 'PASS'}">${v.status} | CVSS ${v.cvss}</span>
+                    </div>
+                    <div class="compliance-desc">${v.description}<br><code style="color:#58a6ff;">Component: ${v.component}</code> | Required Security Update: <code style="color:#f85149;">${v.kb_needed}</code></div>
+                </div>
+            `).join("");
+        }
+    } catch(e) {}
+}
+
+async function loadSandSuiteData() {
+    try {
+        const res = await fetch('/api/sand/summary'); const d = await res.json();
+        document.getElementById('suite-sand-total').innerText = d.total_analyzed || 0;
+        document.getElementById('suite-sand-malicious').innerText = d.malicious_count || 0;
+        const c = document.getElementById('suite-sand-results-container');
+        if (c) {
+            c.innerHTML = (d.recent_analyses || []).map(s => `
+                <div class="compliance-card ${s.verdict === 'MALICIOUS' ? 'HIGH' : (s.verdict === 'SUSPICIOUS' ? 'MEDIUM' : 'PASS')}">
+                    <div class="compliance-header">
+                        <span class="compliance-title"><strong>[${s.verdict}]</strong> ${s.sample_name}</span>
+                        <span class="compliance-tag ${s.verdict === 'MALICIOUS' ? 'HIGH' : 'PASS'}">Score: ${s.threat_score}/100</span>
+                    </div>
+                    <div class="compliance-desc">Entropy: <code>${s.entropy}</code> | Packed: <code>${s.is_packed}</code><br>Suspicious Imports: <code>${(s.suspicious_imports_found || []).join(", ") || 'None'}</code></div>
+                </div>
+            `).join("");
+        }
+    } catch(e) {}
+}
+
+async function loadGuardSuiteData() {
+    try {
+        const res = await fetch('/api/guard/summary'); const d = await res.json();
+        document.getElementById('suite-guard-score').innerText = `${d.identity_health_score}%`;
+        document.getElementById('suite-guard-threats').innerText = d.total_threats_found || 0;
+        const c = document.getElementById('suite-guard-findings-container');
+        if (c) {
+            c.innerHTML = (d.findings || []).map(g => `
+                <div class="compliance-card ${g.severity}">
+                    <div class="compliance-header">
+                        <span class="compliance-title"><strong>[${g.id}]</strong> ${g.name}</span>
+                        <span class="compliance-tag ${g.severity}">${g.severity}</span>
+                    </div>
+                    <div class="compliance-desc">Target Account: <code style="color:#58a6ff;">${g.account}</code> | SPN: <code>${g.spn}</code><br>Recommendation: ${g.recommendation}</div>
+                </div>
+            `).join("");
+        }
+    } catch(e) {}
+}

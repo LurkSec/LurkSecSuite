@@ -34,3 +34,18 @@
 [submodule "lurkhunt-security-engine"]
 	path = lurkhunt-security-engine
 	url = https://github.com/LurkSec/lurkhunt.git
+[submodule "lurkdns-security-engine"]
+	path = lurkdns-security-engine
+	url = https://github.com/LurkSec/lurkdns.git
+[submodule "lurkzero-security-engine"]
+	path = lurkzero-security-engine
+	url = https://github.com/LurkSec/lurkzero.git
+[submodule "lurkvuln-security-engine"]
+	path = lurkvuln-security-engine
+	url = https://github.com/LurkSec/lurkvuln.git
+[submodule "lurksand-security-engine"]
+	path = lurksand-security-engine
+	url = https://github.com/LurkSec/lurksand.git
+[submodule "lurkguard-security-engine"]
+	path = lurkguard-security-engine
+	url = https://github.com/LurkSec/lurkguard.git
