@@ -34,7 +34,9 @@
         <div class="app-body">
             <!-- Sidebar Navigation -->
             <nav class="app-sidebar">
-                <!-- 1. LurkSOC Parent -->
+
+                <!-- DOMAIN 1: COMMAND CENTER -->
+                <div class="nav-domain-header">COMMAND CENTER</div>
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="soc">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -46,10 +48,21 @@
                     </div>
                 </div>
 
-                <!-- NEW 2. LurkEDR Parent -->
+                <!-- DOMAIN 2: AUTOMATION & INCIDENT RESPONSE -->
+                <div class="nav-domain-header">AUTOMATION & RESPONSE</div>
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="soar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <span>LurkSOAR Automation</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a class="nav-sub-btn" data-tab="soar-playbooks">Playbooks & Cases</a>
+                    </div>
+                </div>
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="edr">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         <span>LurkEDR Agent</span>
                         <span class="arrow">▼</span>
                     </button>
@@ -59,101 +72,21 @@
                     </div>
                 </div>
 
-                <!-- 3. LurkSentinel Parent -->
+                <!-- DOMAIN 3: DETECTION & THREAT HUNTING -->
+                <div class="nav-domain-header">DETECTION & HUNTING</div>
                 <div class="nav-group open">
-                    <button class="nav-parent-btn" data-group="sentinel">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                        <span>LurkSentinel</span>
+                    <button class="nav-parent-btn" data-group="hunt">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <span>LurkHunt Engine</span>
                         <span class="arrow">▼</span>
                     </button>
                     <div class="nav-sub-items">
-                        <a href="#sentinel-sockets" class="nav-sub-btn" data-tab="sentinel-sockets">Network Sockets</a>
-                        <a href="#sentinel-portscan" class="nav-sub-btn" data-tab="sentinel-portscan">Port Scanner</a>
+                        <a class="nav-sub-btn" data-tab="hunt-sigma">SIGMA & YARA Rules</a>
                     </div>
                 </div>
-
-                <!-- 4. LurkSIEM Parent -->
-                <div class="nav-group open">
-                    <button class="nav-parent-btn" data-group="siem">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        <span>LurkSIEM</span>
-                        <span class="arrow">▼</span>
-                    </button>
-                    <div class="nav-sub-items">
-                        <a href="#siem-events" class="nav-sub-btn" data-tab="siem-events">Event Log Stream</a>
-                        <a href="#siem-alerts" class="nav-sub-btn" data-tab="siem-alerts">Correlation Alerts</a>
-                    </div>
-                </div>
-
-                <!-- 5. LurkDecoy Parent -->
-                <div class="nav-group open">
-                    <button class="nav-parent-btn" data-group="decoy">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-                        <span>LurkDecoy</span>
-                        <span class="arrow">▼</span>
-                    </button>
-                    <div class="nav-sub-items">
-                        <a href="#decoy-probes" class="nav-sub-btn" data-tab="decoy-probes">Captured Probes</a>
-                        <a href="#decoy-status" class="nav-sub-btn" data-tab="decoy-status">Honeypot Listeners</a>
-                    </div>
-                </div>
-
-                <!-- 6. LurkPacket Parent -->
-                <div class="nav-group open">
-                    <button class="nav-parent-btn" data-group="packet">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <span>LurkPacket</span>
-                        <span class="arrow">▼</span>
-                    </button>
-                    <div class="nav-sub-items">
-                        <a href="#packet-stream" class="nav-sub-btn" data-tab="packet-stream">Packet Stream & PCAP</a>
-                        <a href="#packet-inspector" class="nav-sub-btn" data-tab="packet-inspector">Protocol Inspector</a>
-                    </div>
-                </div>
-
-                <!-- 7. LurkTrace Parent -->
-                <div class="nav-group open">
-                    <button class="nav-parent-btn" data-group="trace">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M10 7h4v11h-4"/></svg>
-                        <span>LurkTrace</span>
-                        <span class="arrow">▼</span>
-                    </button>
-                    <div class="nav-sub-items">
-                        <a href="#trace-procs" class="nav-sub-btn" data-tab="trace-procs">Process Stream</a>
-                        <a href="#trace-tree" class="nav-sub-btn" data-tab="trace-tree">Process Tree Hierarchy</a>
-                    </div>
-                </div>
-
-                <!-- 8. LurkAudit Parent -->
-                <div class="nav-group open">
-                    <button class="nav-parent-btn" data-group="audit">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
-                        <span>LurkAudit</span>
-                        <span class="arrow">▼</span>
-                    </button>
-                    <div class="nav-sub-items">
-                        <a href="#audit-checks" class="nav-sub-btn" data-tab="audit-checks">OS Hardening Checks</a>
-                    </div>
-                </div>
-
-                <!-- 9. LurkShield WAF Parent -->
-                <div class="nav-group open">
-                    <button class="nav-parent-btn" data-group="shield">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        <span>LurkShield WAF</span>
-                        <span class="arrow">▼</span>
-                    </button>
-                    <div class="nav-sub-items">
-                        <a class="nav-sub-btn" data-tab="shield-overview">WAF Overview</a>
-                        <a class="nav-sub-btn" data-tab="shield-inspect">Request Inspector</a>
-                        <a class="nav-sub-btn" data-tab="shield-rate">Rate Limiter</a>
-                    </div>
-                </div>
-
-                <!-- 10. LurkIntel CTI Parent -->
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="intel">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                         <span>LurkIntel CTI</span>
                         <span class="arrow">▼</span>
                     </button>
@@ -163,8 +96,79 @@
                         <a class="nav-sub-btn" data-tab="intel-kev">CISA KEV Catalog</a>
                     </div>
                 </div>
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="siem">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span>LurkSIEM Logs</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#siem-events" class="nav-sub-btn" data-tab="siem-events">Event Log Stream</a>
+                        <a href="#siem-alerts" class="nav-sub-btn" data-tab="siem-alerts">Correlation Alerts</a>
+                    </div>
+                </div>
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="trace">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M10 7h4v11h-4"/></svg>
+                        <span>LurkTrace Procs</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#trace-procs" class="nav-sub-btn" data-tab="trace-procs">Process Stream</a>
+                        <a href="#trace-tree" class="nav-sub-btn" data-tab="trace-tree">Process Tree Hierarchy</a>
+                    </div>
+                </div>
 
-                <!-- 11. LurkIdentity Parent -->
+                <!-- DOMAIN 4: NETWORK & BOUNDARY DEFENSE -->
+                <div class="nav-domain-header">NETWORK & BOUNDARY</div>
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="shield">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>LurkShield WAF</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a class="nav-sub-btn" data-tab="shield-overview">WAF Overview</a>
+                        <a class="nav-sub-btn" data-tab="shield-inspect">Request Inspector</a>
+                        <a class="nav-sub-btn" data-tab="shield-rate">Rate Limiter</a>
+                    </div>
+                </div>
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="sentinel">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        <span>LurkSentinel</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#sentinel-sockets" class="nav-sub-btn" data-tab="sentinel-sockets">Network Sockets</a>
+                        <a href="#sentinel-portscan" class="nav-sub-btn" data-tab="sentinel-portscan">Port Scanner</a>
+                    </div>
+                </div>
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="packet">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <span>LurkPacket PCAP</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#packet-stream" class="nav-sub-btn" data-tab="packet-stream">Packet Stream & PCAP</a>
+                        <a href="#packet-inspector" class="nav-sub-btn" data-tab="packet-inspector">Protocol Inspector</a>
+                    </div>
+                </div>
+                <div class="nav-group open">
+                    <button class="nav-parent-btn" data-group="decoy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                        <span>LurkDecoy Honeypot</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="nav-sub-items">
+                        <a href="#decoy-probes" class="nav-sub-btn" data-tab="decoy-probes">Captured Probes</a>
+                        <a href="#decoy-status" class="nav-sub-btn" data-tab="decoy-status">Honeypot Listeners</a>
+                    </div>
+                </div>
+
+                <!-- DOMAIN 5: IDENTITY, HYGIENE & CLOUD -->
+                <div class="nav-domain-header">IDENTITY & CLOUD</div>
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="identity">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -177,22 +181,8 @@
                         <a class="nav-sub-btn" data-tab="identity-hibp">HIBP Breach Check</a>
                     </div>
                 </div>
-
-                <!-- 12. LurkCloud Parent -->
                 <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="cloud">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-                        <span>LurkCloud</span>
-                        <span class="arrow">▼</span>
-                    </button>
-                    <div class="nav-sub-items">
-                        <a class="nav-sub-btn" data-tab="cloud-overview">Cloud Overview</a>
-                        <a class="nav-sub-btn" data-tab="cloud-baseline">CLI Baseline</a>
-                    </div>
-                </div>
-
-                <!-- 13. Master Reports Parent -->
-                <div class="nav-group open">
                     <button class="nav-parent-btn" data-group="reports">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                         <span>Master Reports</span>
@@ -774,9 +764,44 @@
                     </div>
                 </section>
 
-                <section id="tab-cloud-baseline" class="tab-page">
-                    <div class="section-title"><h2>LurkCloud - CLI Baseline Audit</h2><span class="section-subtitle">AWS and Azure CLI installation and credential configuration status</span></div>
-                    <div id="suite-cloud-baseline-container" class="compliance-list"></div>
+                <!-- ═══════════════ LURKSOAR PAGES ═══════════════ -->
+                <section id="tab-soar-playbooks" class="tab-page">
+                    <div class="section-title"><h2>LurkSOAR - Security Automation & Incident Case Management</h2><span class="section-subtitle">Automated playbooks, multi-stage remediation pipelines, and SOC incident cases</span></div>
+                    <div class="summary-grid">
+                        <div class="summary-card"><span class="card-label">PLAYBOOKS</span><div class="card-value" id="suite-soar-playbooks-count">4</div><span class="card-sub">Built-in Workflows</span></div>
+                        <div class="summary-card"><span class="card-label">TOTAL CASES</span><div class="card-value" id="suite-soar-cases-count">2</div><span class="card-sub">All Tracked Cases</span></div>
+                        <div class="summary-card"><span class="card-label">OPEN INCIDENTS</span><div class="card-value" id="suite-soar-open-count" style="color:#f85149;">2</div><span class="card-sub">In Progress</span></div>
+                        <div class="summary-card"><span class="card-label">EXECUTIONS</span><div class="card-value" id="suite-soar-exec-count" style="color:#3fb950;">0</div><span class="card-sub">Actions Taken</span></div>
+                    </div>
+                    <div class="panel-box">
+                        <div class="panel-header-flex"><span>Automated Remediation Playbooks</span></div>
+                        <div id="suite-soar-playbooks-container" style="padding:12px;"></div>
+                    </div>
+                    <div class="panel-box">
+                        <div class="panel-header-flex"><span>SOC Incident Cases</span></div>
+                        <div id="suite-soar-cases-container" style="padding:12px;"></div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════ LURKHUNT PAGES ═══════════════ -->
+                <section id="tab-hunt-sigma" class="tab-page">
+                    <div class="section-title"><h2>LurkHunt - Threat Hunting & SIGMA/YARA Engine</h2><span class="section-subtitle">SIGMA detection rules, YARA binary string scanning, and interactive threat hunting</span></div>
+                    <div class="summary-grid">
+                        <div class="summary-card"><span class="card-label">SIGMA RULES</span><div class="card-value" id="suite-hunt-sigma-count">8</div><span class="card-sub">Log Detection Rules</span></div>
+                        <div class="summary-card"><span class="card-label">YARA SIGNATURES</span><div class="card-value" id="suite-hunt-yara-count">5</div><span class="card-sub">Memory & Binary Sigs</span></div>
+                        <div class="summary-card"><span class="card-label">THREAT HITS</span><div class="card-value" id="suite-hunt-hits-count" style="color:#f85149;">2</div><span class="card-sub">Correlated Matches</span></div>
+                    </div>
+                    <div class="panel-box">
+                        <div class="panel-header">Interactive Threat Hunt Scanner</div>
+                        <div style="padding:16px;display:flex;gap:10px;">
+                            <input type="text" id="suite-hunt-input" class="filter-input" style="flex:1;" placeholder="Paste command line, payload, or process memory string to scan...">
+                            <button id="btn-suite-hunt-scan" class="btn btn-primary">Scan with SIGMA & YARA</button>
+                        </div>
+                    </div>
+                    <div class="panel-box">
+                        <div class="panel-header-flex"><span>Correlated Threat Matches</span></div>
+                        <div id="suite-hunt-hits-container" style="padding:12px;"></div>
+                    </div>
                 </section>
 
             </main>

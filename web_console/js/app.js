@@ -1049,4 +1049,85 @@ document.addEventListener('DOMContentLoaded', () => {
         (d.all_findings || []).forEach(f => { csv += `"${f.timestamp}","${f.resource_type}","${f.resource_id}","${f.severity}","${f.status}","${f.finding}"\n`; });
         downloadFile(csv, 'LurkCloud_Report.csv', 'text/csv');
     });
+
+    // LurkSOAR & LurkHunt Loaders & Click Listeners
+    document.querySelectorAll('[data-tab="soar-playbooks"]').forEach(btn => {
+        btn.addEventListener('click', () => setTimeout(loadSOARSuiteData, 100));
+    });
+    document.querySelectorAll('[data-tab="hunt-sigma"]').forEach(btn => {
+        btn.addEventListener('click', () => setTimeout(loadHuntSuiteData, 100));
+    });
+
+    document.getElementById('btn-suite-hunt-scan')?.addEventListener('click', async () => {
+        const input = document.getElementById('suite-hunt-input');
+        if (!input || !input.value) return;
+        await fetch(`/api/hunt/scan?sample=${encodeURIComponent(input.value)}`);
+        loadHuntSuiteData();
+    });
 });
+
+async function loadSOARSuiteData() {
+    try {
+        const res = await fetch('/api/soar/summary');
+        const d = await res.json();
+        document.getElementById('suite-soar-playbooks-count').innerText = d.playbooks_count || 4;
+        document.getElementById('suite-soar-cases-count').innerText = d.cases_count || 2;
+        document.getElementById('suite-soar-open-count').innerText = d.open_cases || 2;
+        document.getElementById('suite-soar-exec-count').innerText = (d.history || []).length;
+        renderSOARPlaybooks(d.playbooks || []);
+        renderSOARCases(d.cases || []);
+    } catch(e) { console.warn('SOAR API error:', e); }
+}
+
+function renderSOARPlaybooks(playbooks) {
+    const c = document.getElementById('suite-soar-playbooks-container');
+    if (!c) return;
+    c.innerHTML = playbooks.map(p => `
+        <div class="compliance-card ${p.severity_threshold}">
+            <div class="compliance-header">
+                <span class="compliance-title"><strong>[${p.id}]</strong> ${p.name}</span>
+                <span class="compliance-tag ${p.severity_threshold}">${p.severity_threshold}</span>
+            </div>
+            <div class="compliance-desc">Trigger: <code>${p.trigger_event}</code></div>
+        </div>
+    `).join("");
+}
+
+function renderSOARCases(cases) {
+    const c = document.getElementById('suite-soar-cases-container');
+    if (!c) return;
+    c.innerHTML = cases.map(cs => `
+        <div class="compliance-card ${cs.severity}">
+            <div class="compliance-header">
+                <span class="compliance-title"><strong>[${cs.case_id}]</strong> ${cs.title}</span>
+                <span class="compliance-tag ${cs.severity}">${cs.status} | ${cs.severity}</span>
+            </div>
+            <div class="compliance-desc">${cs.description}<br><em style="color:#58a6ff;">Assigned to: ${cs.assigned_to}</em></div>
+        </div>
+    `).join("");
+}
+
+async function loadHuntSuiteData() {
+    try {
+        const res = await fetch('/api/hunt/summary');
+        const d = await res.json();
+        document.getElementById('suite-hunt-sigma-count').innerText = d.sigma_rules_count || 8;
+        document.getElementById('suite-hunt-yara-count').innerText = d.yara_sigs_count || 5;
+        document.getElementById('suite-hunt-hits-count').innerText = (d.recent_hits || []).length;
+        renderHuntHits(d.recent_hits || []);
+    } catch(e) { console.warn('Hunt API error:', e); }
+}
+
+function renderHuntHits(hits) {
+    const c = document.getElementById('suite-hunt-hits-container');
+    if (!c) return;
+    c.innerHTML = hits.map(h => `
+        <div class="compliance-card ${h.severity === 'CRITICAL' || h.severity === 'HIGH' ? 'HIGH' : 'MEDIUM'}">
+            <div class="compliance-header">
+                <span class="compliance-title"><strong>[${h.rule_id || h.sig_id}]</strong> ${h.title || h.sig_name}</span>
+                <span class="compliance-tag ${h.severity}">${h.severity}</span>
+            </div>
+            <div class="compliance-desc">Source: <code>${h.source || 'System Scan'}</code><br>Matched Payload: <code>${h.matched_sample || h.matched_pattern || ''}</code></div>
+        </div>
+    `).join("");
+}

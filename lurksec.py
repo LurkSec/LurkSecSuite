@@ -29,7 +29,14 @@ from lurksec_core.shield_engine.rate_limiter import RateLimiter
 from lurksec_core.intel_engine.cti_engine import CTIFeedManager, IOCMatcher, MITREMapper
 from lurksec_core.identity_engine.identity_engine import SecretScanner, PolicyAuditor
 from lurksec_core.identity_engine.hibp_checker import HIBPChecker
+from lurksec_core.identity_engine.identity_engine import SecretScanner, PolicyAuditor
+from lurksec_core.identity_engine.hibp_checker import HIBPChecker
 from lurksec_core.cloud_engine.cloud_engine import AWSInspector, AzureInspector, BaselineAuditor
+
+from lurksec_core.soar_engine.playbook_runner import PlaybookRunner
+from lurksec_core.soar_engine.case_manager import CaseManager
+from lurksec_core.hunt_engine.sigma_evaluator import SigmaEvaluator
+from lurksec_core.hunt_engine.yara_scanner import YaraScanner
 
 # Global Managers
 DECOY_MANAGER = HoneypotManager()
@@ -38,6 +45,27 @@ DECOY_MANAGER.start_all()
 EDR_ACTION_LOGS = []
 WAF_BLOCK_LOG = []
 WAF_RATE_LIMITER = RateLimiter()
+
+SOAR_PLAYBOOKS = PlaybookRunner()
+SOAR_CASES = CaseManager()
+HUNT_SIGMA = SigmaEvaluator()
+HUNT_YARA = YaraScanner()
+HUNT_HITS = [
+    {
+        "rule_id": "SIGMA-001",
+        "title": "Obfuscated / Base64 Encoded PowerShell Command",
+        "severity": "HIGH",
+        "source": "Process Command Line (PID 4876)",
+        "matched_sample": "powershell.exe -NoP -NonI -W Hidden -Enc SUVYICgoTmV3LU9iamVjdCBOZXQuV2ViQ2xpZW50KS5Eb3dubG9hZFN0cmluZygnLi4uJykp"
+    },
+    {
+        "sig_id": "YARA-001",
+        "sig_name": "Cobalt_Strike_Reflective_Loader",
+        "severity": "CRITICAL",
+        "source": "Process Memory (PID 644)",
+        "matched_sample": "4d5a900003000000...ReflectiveLoader"
+    }
+]
 
 class LurkSecHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -198,6 +226,48 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                     "baseline": baseline
                 })
 
+            elif path == "/api/soar/summary":
+                self.send_json({
+                    "playbooks_count": len(SOAR_PLAYBOOKS.get_playbooks()),
+                    "cases_count": len(SOAR_CASES.get_cases()),
+                    "open_cases": len([c for c in SOAR_CASES.get_cases() if c["status"] in ["OPEN", "IN_PROGRESS"]]),
+                    "playbooks": SOAR_PLAYBOOKS.get_playbooks(),
+                    "cases": SOAR_CASES.get_cases(),
+                    "history": SOAR_PLAYBOOKS.get_history()
+                })
+
+            elif path == "/api/soar/run":
+                p_id = params.get("id", ["PB-001"])[0]
+                ip = params.get("ip", ["192.168.1.100"])[0]
+                res = SOAR_PLAYBOOKS.execute_playbook(p_id, {"ip": ip, "target_host": "LOCAL-HOST"})
+                self.send_json(res)
+
+            elif path == "/api/soar/case/update":
+                c_id = params.get("id", [""])[0]
+                status = params.get("status", [None])[0]
+                note = params.get("note", [None])[0]
+                res = SOAR_CASES.update_case(c_id, status=status, note=note)
+                self.send_json(res)
+
+            elif path == "/api/hunt/summary":
+                self.send_json({
+                    "sigma_rules_count": len(HUNT_SIGMA.get_rules()),
+                    "yara_sigs_count": len(HUNT_YARA.get_signatures()),
+                    "hits_count": len(HUNT_HITS),
+                    "sigma_rules": HUNT_SIGMA.get_rules(),
+                    "yara_signatures": HUNT_YARA.get_signatures(),
+                    "recent_hits": HUNT_HITS
+                })
+
+            elif path == "/api/hunt/scan":
+                sample = params.get("sample", ["powershell.exe -enc aWYoMTEpew=="])[0]
+                sigma_matches = HUNT_SIGMA.evaluate_text(sample)
+                yara_matches = HUNT_YARA.scan_string(sample, source_name="Interactive Input")
+                combined = sigma_matches + yara_matches
+                for match in combined:
+                    HUNT_HITS.insert(0, match)
+                self.send_json({"matches_count": len(combined), "results": combined})
+
             elif path == "/api/report/json":
                 summary = self.get_master_summary()
                 rep = MasterReportGenerator(summary)
@@ -254,6 +324,16 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
             "edr": {
                 "action_logs": EDR_ACTION_LOGS,
                 "quarantined_files": FileQuarantiner.list_quarantined_files()
+            },
+            "soar": {
+                "playbooks_count": len(SOAR_PLAYBOOKS.get_playbooks()),
+                "cases_count": len(SOAR_CASES.get_cases()),
+                "open_cases": len([c for c in SOAR_CASES.get_cases() if c["status"] in ["OPEN", "IN_PROGRESS"]])
+            },
+            "hunt": {
+                "sigma_rules_count": len(HUNT_SIGMA.get_rules()),
+                "yara_sigs_count": len(HUNT_YARA.get_signatures()),
+                "hits_count": len(HUNT_HITS)
             }
         }
 

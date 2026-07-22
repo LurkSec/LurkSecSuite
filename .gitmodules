@@ -28,3 +28,9 @@
 [submodule "lurkcloud-security-engine"]
 	path = lurkcloud-security-engine
 	url = https://github.com/LurkSec/lurkcloud.git
+[submodule "lurksoar-security-engine"]
+	path = lurksoar-security-engine
+	url = https://github.com/LurkSec/lurksoar.git
+[submodule "lurkhunt-security-engine"]
+	path = lurkhunt-security-engine
+	url = https://github.com/LurkSec/lurkhunt.git
