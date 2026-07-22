@@ -373,7 +373,38 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 self.send_text(rep.generate_html(), "text/html")
 
             else:
-                super().do_GET()
+                web_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_console")
+                clean_path = path.split('?')[0].lstrip("/")
+                if not clean_path or clean_path == "index.html":
+                    filepath = os.path.join(web_dir, "index.html")
+                else:
+                    filepath = os.path.normpath(os.path.join(web_dir, clean_path.replace("/", os.sep)))
+
+                if filepath.startswith(web_dir) and os.path.isfile(filepath):
+                    ctype = "text/html; charset=utf-8"
+                    if filepath.endswith(".css"):
+                        ctype = "text/css"
+                    elif filepath.endswith(".js"):
+                        ctype = "text/javascript"
+                    elif filepath.endswith(".json"):
+                        ctype = "application/json"
+                    elif filepath.endswith(".png"):
+                        ctype = "image/png"
+                    elif filepath.endswith(".ico"):
+                        ctype = "image/x-icon"
+
+                    with open(filepath, "rb") as f:
+                        content = f.read()
+
+                    self.send_response(200)
+                    self.send_header("Content-Type", ctype)
+                    self.send_header("Content-Length", str(len(content)))
+                    self.send_header("Connection", "close")
+                    self.end_headers()
+                    self.wfile.write(content)
+                    self.wfile.flush()
+                else:
+                    self.send_error(404, "File Not Found")
 
         except Exception as e:
             traceback.print_exc()
@@ -456,6 +487,7 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(body)
+        self.wfile.flush()
 
     def send_text(self, text, mime_type):
         body = text.encode("utf-8")
@@ -464,6 +496,7 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+        self.wfile.flush()
 
 class LurkSecServer(ThreadingHTTPServer):
     allow_reuse_address = True

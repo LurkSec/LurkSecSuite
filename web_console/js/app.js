@@ -163,17 +163,38 @@ function renderSOCFeed(filteredIncidents = null) {
     incidents.forEach(inc => {
         const div = document.createElement('div');
         div.className = `compliance-card ${inc.severity}`;
-        let actionBtnHTML = '';
-        if (inc.action_type === 'BLOCK_IP' && inc.target_ip) {
-            actionBtnHTML = `
-                <div style="margin-top:8px;">
-                    <button class="btn btn-outline btn-quick-block" data-ip="${inc.target_ip}" style="font-size:10px;color:#f85149;border-color:#f85149;display:inline-flex;align-items:center;gap:4px;">
+        
+        let actions = [];
+        if (inc.target_ip || (inc.action_type === 'BLOCK_IP')) {
+            const ip = inc.target_ip || (inc.evidence.match(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/) || [])[0];
+            if (ip) {
+                actions.push(`
+                    <button class="btn btn-outline btn-quick-block" data-ip="${ip}" style="font-size:10px;color:#f85149;border-color:#f85149;display:inline-flex;align-items:center;gap:4px;">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
-                        Execute EDR IP Block (${inc.target_ip})
+                        Block IP (${ip})
                     </button>
-                </div>
-            `;
+                `);
+            }
         }
+
+        const pidMatch = inc.evidence.match(/PID\s+(\d+)/i);
+        if (pidMatch) {
+            const pid = pidMatch[1];
+            actions.push(`
+                <button class="btn btn-outline btn-quick-kill" data-pid="${pid}" style="font-size:10px;color:#d29922;border-color:#d29922;display:inline-flex;align-items:center;gap:4px;">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                    Kill Process (PID ${pid})
+                </button>
+            `);
+        }
+
+        actions.push(`
+            <button class="btn btn-outline btn-quick-soar" data-title="${encodeURIComponent(inc.title)}" data-desc="${encodeURIComponent(inc.evidence)}" data-sev="${inc.severity}" style="font-size:10px;color:#58a6ff;border-color:#58a6ff;display:inline-flex;align-items:center;gap:4px;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Spawn SOAR Case
+            </button>
+        `);
+
         div.innerHTML = `
             <div class="compliance-header">
                 <span class="compliance-title">${inc.engine} | ${inc.title} (${inc.incident_id})</span>
@@ -181,9 +202,47 @@ function renderSOCFeed(filteredIncidents = null) {
             </div>
             <div class="compliance-desc">Category: ${inc.category} | Origin: ${inc.origin} | Time: ${inc.timestamp}</div>
             <div class="compliance-payload">${inc.evidence}</div>
-            ${actionBtnHTML}
+            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">${actions.join('')}</div>
         `;
         container.appendChild(div);
+    });
+
+    // Attach click handlers for IP Block buttons
+    container.querySelectorAll('.btn-quick-block').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const ip = e.target.closest('button').getAttribute('data-ip');
+            btn.innerText = `Blocking ${ip}...`;
+            const res = await fetch(`/api/edr/block?ip=${encodeURIComponent(ip)}`);
+            const d = await res.json();
+            btn.innerText = d.success ? `IP ${ip} Blocked` : `Block Failed`;
+            loadMasterData();
+        });
+    });
+
+    // Attach click handlers for Kill Process buttons
+    container.querySelectorAll('.btn-quick-kill').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const pid = e.target.closest('button').getAttribute('data-pid');
+            btn.innerText = `Killing PID ${pid}...`;
+            const res = await fetch(`/api/edr/kill?pid=${pid}`);
+            const d = await res.json();
+            btn.innerText = d.success ? `PID ${pid} Killed` : `Kill Failed`;
+            loadMasterData();
+        });
+    });
+
+    // Attach click handlers for SOAR case creation
+    container.querySelectorAll('.btn-quick-soar').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const title = decodeURIComponent(e.target.closest('button').getAttribute('data-title'));
+            const desc = decodeURIComponent(e.target.closest('button').getAttribute('data-desc'));
+            const sev = e.target.closest('button').getAttribute('data-sev');
+            btn.innerText = `Spawning SOAR Case...`;
+            const res = await fetch(`/api/soar/case/create?title=${encodeURIComponent(title)}&description=${encodeURIComponent(desc)}&severity=${sev}&assigned=SecOps%20Analyst`);
+            const d = await res.json();
+            btn.innerText = `SOAR Case ${d.case_id} Created`;
+            loadMasterData();
+        });
     });
 }
 
@@ -1223,6 +1282,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         if (txt) txt.innerText = data.message;
         loadMasterData();
+    });
+
+    // Master Incident Containment Console Executor
+    document.getElementById('btn-soc-execute-action')?.addEventListener('click', async () => {
+        const action = document.getElementById('soc-action-type').value;
+        const target = document.getElementById('soc-action-target').value;
+        const resLabel = document.getElementById('soc-action-result');
+        if (!target) {
+            if (resLabel) resLabel.innerText = 'Please specify a target IP, PID, or Filepath.';
+            return;
+        }
+
+        if (resLabel) resLabel.innerText = `Executing ${action} on target '${target}'...`;
+        let url = '';
+        if (action === 'block_ip') url = `/api/edr/block?ip=${encodeURIComponent(target)}`;
+        else if (action === 'kill_pid') url = `/api/edr/kill?pid=${encodeURIComponent(target)}`;
+        else url = `/api/edr/quarantine?path=${encodeURIComponent(target)}`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            if (resLabel) resLabel.innerText = `Result: ${data.message || (data.success ? 'Action executed successfully.' : 'Action failed.')}`;
+            loadMasterData();
+        } catch(err) {
+            if (resLabel) resLabel.innerText = `Execution error: ${err.message}`;
+        }
     });
 
     document.querySelectorAll('[data-tab="dns-sinkhole"]').forEach(btn => btn.addEventListener('click', () => setTimeout(loadDNSSuiteData, 100)));

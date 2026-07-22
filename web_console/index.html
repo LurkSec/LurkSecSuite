@@ -331,6 +331,27 @@
                         </div>
                     </div>
 
+                    <!-- Master Incident Active Containment Console -->
+                    <div class="panel-box" style="margin-bottom:16px;">
+                        <div class="panel-header-flex">
+                            <span>Master Incident Containment & Active EDR Executor</span>
+                            <span class="compliance-tag HIGH" style="font-size:10px;">ACTIVE DEFENSE</span>
+                        </div>
+                        <div style="padding:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                            <select id="soc-action-type" class="filter-input" style="width:180px;">
+                                <option value="block_ip">Firewall IP Block</option>
+                                <option value="kill_pid">Process Termination (PID)</option>
+                                <option value="quarantine">Binary File Quarantine</option>
+                            </select>
+                            <input type="text" id="soc-action-target" class="filter-input" style="flex:1;min-width:220px;" placeholder="Enter Target IP / Process PID / File Path (e.g. 198.51.100.44 or 4876)">
+                            <button id="btn-soc-execute-action" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;background:#f85149;border-color:#f85149;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                                Execute Containment
+                            </button>
+                            <span id="soc-action-result" style="font-size:11px;color:var(--text-muted);width:100%;margin-top:4px;">Specify target details above to execute direct EDR containment across all 18 security engines.</span>
+                        </div>
+                    </div>
+
                     <div class="panel-box">
                         <div class="panel-header-flex">
                             <span>Correlated Threat Feed</span>
