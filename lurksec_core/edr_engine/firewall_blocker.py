@@ -3,10 +3,7 @@ import time
 from typing import Dict, List, Any
 
 class FirewallBlocker:
-    """
-    Manages Windows Firewall rules to dynamically block & unblock malicious remote IPs.
-    Includes software-level fallbacks for non-elevated environments.
-    """
+    
 
     SOFTWARE_BLOCKED_IPS = set()
 

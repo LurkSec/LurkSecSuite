@@ -12,10 +12,7 @@ def _run_cli(cmd: str) -> str:
 
 
 class AWSInspector:
-    """
-    AWS CLI-based security auditor for S3, EC2 Security Groups, and IAM.
-    Gracefully degrades when AWS CLI is not configured.
-    """
+    
 
     @staticmethod
     def check_cli_available() -> bool:
@@ -115,10 +112,7 @@ class AWSInspector:
 
 
 class AzureInspector:
-    """
-    Azure CLI-based security auditor for NSGs and Storage Accounts.
-    Gracefully degrades when Azure CLI is not configured.
-    """
+    
 
     @staticmethod
     def check_cli_available() -> bool:

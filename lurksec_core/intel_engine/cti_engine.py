@@ -5,7 +5,6 @@ import time
 import urllib.request
 from typing import List, Dict, Any
 
-# Hardcoded high-confidence threat actor IPs for offline fallback
 KNOWN_THREAT_IPS = [
     "185.220.101.5", "185.220.101.34", "185.220.101.45", "185.107.47.215",
     "45.142.212.100", "45.142.212.200", "194.165.16.11", "194.165.16.17",
@@ -29,10 +28,7 @@ MITRE_TECHNIQUES = {
 }
 
 class CTIFeedManager:
-    """
-    Fetches and manages Cyber Threat Intelligence feeds.
-    Falls back to offline seed list if network not available.
-    """
+    
 
     _cached_ips: List[str] = []
     _cached_kev: List[Dict] = []
@@ -47,7 +43,6 @@ class CTIFeedManager:
 
         ips = set(KNOWN_THREAT_IPS)
 
-        # Try fetching live blocklist from Feodo Tracker (no API key required)
         try:
             url = "https://feodotracker.abuse.ch/downloads/ipblocklist.json"
             req = urllib.request.Request(url, headers={"User-Agent": "LurkIntel/1.0"})

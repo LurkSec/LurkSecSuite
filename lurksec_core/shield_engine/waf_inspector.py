@@ -3,10 +3,7 @@ import time
 from typing import Dict, List, Any
 
 class WAFInspector:
-    """
-    OWASP Top 10 HTTP Request Inspection Engine.
-    Detects SQL Injection, XSS, Path Traversal, Command Injection, and SSRF patterns.
-    """
+    
 
     RULES = [
         {

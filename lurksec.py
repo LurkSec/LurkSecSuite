@@ -46,7 +46,6 @@ from lurksec_core.vuln_engine.vuln_scanner import VulnerabilityScanner
 from lurksec_core.sand_engine.malware_sandbox import MalwareSandbox
 from lurksec_core.guard_engine.itdr_auditor import ITDRAuditor
 
-# Global Managers
 DECOY_MANAGER = HoneypotManager()
 DECOY_MANAGER.start_all()
 
@@ -146,7 +145,6 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 })
                 self.send_json(res)
 
-            # ─── LurkShield WAF Endpoints ───────────────────────────────────────────
             elif path == "/api/shield/inspect":
                 from urllib.parse import unquote
                 method = params.get("method", ["GET"])[0]
@@ -170,7 +168,6 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                     "active_rules": WAFInspector.get_rule_summary()
                 })
 
-            # ─── LurkIntel CTI Endpoints ────────────────────────────────────────────
             elif path == "/api/intel/summary":
                 threat_ips = CTIFeedManager.get_threat_ips()
                 kev = CTIFeedManager.get_cisa_kev()
@@ -186,7 +183,6 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                     "cisa_kev_count": len(kev)
                 })
 
-            # ─── LurkIdentity Endpoints ─────────────────────────────────────────────
             elif path == "/api/identity/summary":
                 findings = SecretScanner.scan_filesystem()
                 policy_audits = PolicyAuditor.audit_password_policy()
@@ -205,7 +201,6 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 else:
                     self.send_json({"error": "No password provided."})
 
-            # ─── LurkCloud Endpoints ────────────────────────────────────────────────
             elif path == "/api/cloud/summary":
                 aws_available = AWSInspector.check_cli_available()
                 azure_available = AzureInspector.check_cli_available()
@@ -280,7 +275,6 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                     HUNT_HITS.insert(0, match)
                 self.send_json({"matches_count": len(combined), "results": combined})
 
-            # ─── LurkDNS & LurkZero & LurkVuln & LurkSand & LurkGuard Endpoints ────
             elif path == "/api/dns/summary":
                 self.send_json(DNS_ENGINE.get_summary())
 
@@ -377,12 +371,9 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                     self.send_error(404, "File Not Found")
 
         except (ConnectionAbortedError, BrokenPipeError):
-            # Browser closed the connection mid-response (navigation / refresh) — harmless.
             pass
         except Exception as e:
             traceback.print_exc()
-            # Always emit a complete HTTP response so the browser never sees
-            # ERR_EMPTY_RESPONSE from a half-written / no-response socket.
             try:
                 body = json.dumps({"error": str(e)}).encode()
                 self.send_response(500)
@@ -548,10 +539,8 @@ class DualStackServer(ThreadingHTTPServer):
         super().server_bind()
 
 def _free_port(port: int):
-    """Kill any existing process listening on *port* so we can bind cleanly."""
     import subprocess
     try:
-        # Find PIDs on the port via netstat
         out = subprocess.check_output(
             f'netstat -ano | findstr ":{port} "',
             shell=True, text=True, errors="ignore"
@@ -602,10 +591,9 @@ def main():
             if inc["severity"] in ["HIGH", "MEDIUM"]:
                 print(f"  [{inc['engine']}] ({inc['severity']}) {inc['title']} | Evidence: {inc['evidence']}")
     else:
-        # Kill any stale process already holding the port to avoid zombie pile-up
         _free_port(args.port)
         import time as _time
-        _time.sleep(0.5)  # brief pause so the OS releases the socket
+        _time.sleep(0.5)
 
         httpd = None
         try:
@@ -617,7 +605,6 @@ def main():
                 print(f"[-] Failed to bind port {args.port}: {e}")
                 sys.exit(1)
 
-        # Always open 127.0.0.1 — avoids Windows resolving 'localhost' -> ::1
         url = f"http://127.0.0.1:{args.port}"
         print(f"[+] LurkSec Master Console listening on {url} (IPv4 & IPv6 Dual-Stack)")
         webbrowser.open(url)

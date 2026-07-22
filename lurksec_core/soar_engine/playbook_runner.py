@@ -4,10 +4,7 @@ import subprocess
 from typing import Dict, List, Any
 
 class PlaybookRunner:
-    """
-    LurkSOAR Automated Playbook Execution Engine.
-    Executes multi-stage remediation playbooks against correlated security incidents.
-    """
+    
 
     BUILTIN_PLAYBOOKS = [
         {
@@ -78,7 +75,6 @@ class PlaybookRunner:
         for act in pb["actions"]:
             step_res = {"step": act["step"], "type": act["type"], "status": "COMPLETED", "details": act["description"]}
             
-            # Simulate real execution action for Firewall / Process
             if act["type"] == "FIREWALL_BLOCK" and "ip" in context:
                 ip = context["ip"]
                 try:

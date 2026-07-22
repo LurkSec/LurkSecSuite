@@ -5,10 +5,7 @@ import time
 from typing import Dict, List, Any
 
 class ITDRAuditor:
-    """
-    LurkGuard: Active Directory & Identity Threat Detection (ITDR) Auditor.
-    Audits local user account privileges, Administrator group composition, Guest account posture, and password expiration policies.
-    """
+    
 
     def audit_identity_threats(self) -> Dict[str, Any]:
         now = time.strftime("%Y-%m-%d %H:%M:%S")

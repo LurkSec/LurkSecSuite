@@ -2,10 +2,7 @@ import re
 from typing import Dict, List, Any
 
 class YaraScanner:
-    """
-    LurkHunt YARA-style Binary & Memory Signature Pattern Matching Engine.
-    Scans process memory buffers, disk artifacts, and payload strings for malicious signatures.
-    """
+    
 
     SIGNATURES = [
         {

@@ -2,10 +2,7 @@ import time
 from typing import Dict, List, Any
 
 class CaseManager:
-    """
-    LurkSOAR SOC Incident Case Manager.
-    Tracks security incidents, evidence, timeline milestones, and analyst resolution states.
-    """
+    
 
     def __init__(self):
         self.cases: List[Dict[str, Any]] = []

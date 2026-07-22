@@ -2,10 +2,7 @@ import re
 from typing import Dict, List, Any
 
 class SigmaEvaluator:
-    """
-    LurkHunt SIGMA Detection Rule Evaluator.
-    Parses & evaluates SIGMA threat hunting rules against security log streams and process traces.
-    """
+    
 
     BUILTIN_SIGMA_RULES = [
         {

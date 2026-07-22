@@ -30,9 +30,7 @@ SCAN_FILENAMES = [".env", "config", "credentials", "secrets", "settings", ".env.
 
 
 class SecretScanner:
-    """
-    Scans local filesystem for exposed credentials, API keys, and sensitive secrets.
-    """
+    
 
     @staticmethod
     def scan_filesystem(max_files: int = 200) -> List[Dict[str, Any]]:

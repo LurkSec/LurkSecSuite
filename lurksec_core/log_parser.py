@@ -8,36 +8,7 @@ class SIEMLogParser:
     def get_real_events(max_events: int = 100) -> List[Dict[str, Any]]:
         events = []
         limit = max_events // 2
-        ps_script = """
-        $logNames = @('System', 'Application')
-        $results = @()
-        try {
-            $secTest = Get-WinEvent -LogName Security -MaxEvents 1 -ErrorAction Stop
-            $logNames += 'Security'
-        } catch {}
-
-        foreach ($log in $logNames) {
-            try {
-                $evs = Get-WinEvent -LogName $log -MaxEvents """ + str(limit) + """ -ErrorAction SilentlyContinue
-                foreach ($e in $evs) {
-                    $user = 'SYSTEM'
-                    if ($e.UserId) {
-                        try { $user = $e.UserId.Translate([System.Security.Principal.NTAccount]).Value } catch {}
-                    }
-                    $results += [PSCustomObject]@{
-                        TimeCreated = $e.TimeCreated.ToString('yyyy-MM-dd HH:mm:ss')
-                        Id = $e.Id
-                        LogName = $e.LogName
-                        ProviderName = $e.ProviderName
-                        LevelDisplayName = $e.LevelDisplayName
-                        User = $user
-                        Message = ($e.Message -split "`n")[0]
-                    }
-                }
-            } catch {}
-        }
-        $results | ConvertTo-Json -Compress
-        """
+        ps_script =  + str(limit) + 
 
         try:
             out = subprocess.check_output(

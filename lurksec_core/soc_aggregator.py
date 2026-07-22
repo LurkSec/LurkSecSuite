@@ -2,9 +2,7 @@ import time
 from typing import Dict, List, Any
 
 class SOCAggregator:
-    """
-    LurkSOC: Master Incident Command Feed correlating telemetry across all 18 sub-engines.
-    """
+    
 
     @staticmethod
     def aggregate_incidents(

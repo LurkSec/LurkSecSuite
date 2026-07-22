@@ -5,10 +5,7 @@ import time
 from typing import Dict, List, Any
 
 class VulnerabilityScanner:
-    """
-    LurkVuln: Vulnerability Management & Patch Compliance Engine.
-    Audits installed software, Windows Security KB Hotfix patches, and calculates host vulnerability compliance.
-    """
+    
 
     def audit_system_vulnerabilities(self) -> Dict[str, Any]:
         now = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -16,7 +13,6 @@ class VulnerabilityScanner:
 
         installed_kbs = []
         try:
-            # Prefer Get-HotFix (works on all Windows 10/11, wmic is deprecated)
             ps_cmd = "Get-HotFix | Select-Object -ExpandProperty HotFixId"
             out = subprocess.check_output(
                 ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_cmd],
@@ -32,7 +28,6 @@ class VulnerabilityScanner:
 
         kb_set = set(installed_kbs)
 
-        # Audit critical security baselines against installed patches
         patch_checks = [
             {
                 "cve": "CVE-2023-36884",

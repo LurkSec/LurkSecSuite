@@ -3,10 +3,7 @@ import time
 from typing import Dict, List, Any
 
 class EDRReportGenerator:
-    """
-    Generates LurkEDR Threat Containment & Response Audit Reports.
-    Matches the Minimalist Charcoal Console Theme.
-    """
+    
 
     def __init__(self, action_logs: List[Dict[str, Any]], quarantined_files: List[Dict[str, Any]]):
         self.action_logs = action_logs
@@ -53,38 +50,6 @@ class EDRReportGenerator:
         logs_html = ""
         for log in self.action_logs:
             badge_class = "status-pass" if log.get("success") else "status-fail"
-            logs_html += f"""
-            <div class="card">
-                <div class="card-header">
-                    <strong>{log.get('action_type', 'EDR Action')}</strong> - Target: <code>{log.get('target')}</code>
-                    <span class="{badge_class}">[{'SUCCESS' if log.get('success') else 'FAILED'}]</span>
-                </div>
-                <div class="card-body">
-                    <div>Timestamp: {log.get('timestamp')}</div>
-                    <div>Details: {log.get('message')}</div>
-                </div>
-            </div>
-            """
+            logs_html += f
 
-        return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>LurkEDR Containment Report</title>
-    <style>
-        body {{ font-family: 'Courier New', monospace; background: #0d1117; color: #c9d1d9; padding: 20px; }}
-        h1, h2 {{ color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 8px; }}
-        .card {{ background: #161b22; border: 1px solid #30363d; border-radius: 4px; padding: 12px; margin-bottom: 12px; }}
-        .card-header {{ display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px; }}
-        .status-pass {{ color: #3fb950; }}
-        .status-fail {{ color: #f85149; }}
-        code {{ background: #21262d; padding: 2px 6px; border-radius: 3px; color: #58a6ff; }}
-    </style>
-</head>
-<body>
-    <h1>LurkEDR Endpoint Containment Audit</h1>
-    <div>Report Generated: {now_str}</div>
-    <h2>Action Log History ({len(self.action_logs)} Actions)</h2>
-    {logs_html if logs_html else '<div>No containment actions logged.</div>'}
-</body>
-</html>"""
+        return f

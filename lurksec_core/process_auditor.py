@@ -14,9 +14,7 @@ class ProcessAuditor:
             return cls._CACHED_PROCESSES
 
         processes = []
-        ps_script = """
-        Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId, Name, ExecutablePath, CommandLine | ConvertTo-Json -Compress
-        """
+        ps_script = 
 
         try:
             out = subprocess.check_output(

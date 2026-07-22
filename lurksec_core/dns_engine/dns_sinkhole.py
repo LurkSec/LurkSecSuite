@@ -3,10 +3,7 @@ import time
 from typing import Dict, List, Any
 
 class DNSSinkhole:
-    """
-    LurkDNS: Malicious Domain Sinkhole & DNS Query Security Inspector.
-    Filters C2 domains, tracks query streams, and evaluates real DNS queries.
-    """
+    
 
     KNOWN_MALICIOUS_DOMAINS = [
         "c2-beacon-sinkhole.internal",

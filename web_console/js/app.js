@@ -1,4 +1,3 @@
-// Master LurkSec Suite Unified Controller with EDR Controls
 
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
@@ -824,9 +823,6 @@ function setupFilters() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// LURKSHIELD WAF ENGINE HANDLERS
-// ═══════════════════════════════════════════════════════════════════
 async function loadShieldData() {
     try {
         const res = await fetch('/api/shield/summary?t=' + Date.now());
@@ -932,9 +928,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ═══════════════════════════════════════════════════════════════════
-// LURKINTEL CTI ENGINE HANDLERS
-// ═══════════════════════════════════════════════════════════════════
 async function loadIntelData() {
     try {
         const res = await fetch('/api/intel/summary?t=' + Date.now());
@@ -999,9 +992,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ═══════════════════════════════════════════════════════════════════
-// LURKIDENTITY ENGINE HANDLERS
-// ═══════════════════════════════════════════════════════════════════
 async function loadIdentityData() {
     try {
         const res = await fetch('/api/identity/summary?t=' + Date.now());
@@ -1069,9 +1059,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ═══════════════════════════════════════════════════════════════════
-// LURKCLOUD ENGINE HANDLERS
-// ═══════════════════════════════════════════════════════════════════
 async function loadCloudData() {
     try {
         const res = await fetch('/api/cloud/summary?t=' + Date.now());
@@ -1479,9 +1466,6 @@ async function loadGuardSuiteData() {
         }
     } catch(e) {}
 }
-// ═══════════════════════════════════════════════════════════════
-// LURKSOAR — Full Interactive SOAR Module
-// ═══════════════════════════════════════════════════════════════
 
 const SEVERITY_COLOR = { CRITICAL: '#f85149', HIGH: '#f0883e', MEDIUM: '#d29922', LOW: '#3fb950', INFO: '#58a6ff' };
 const STATUS_COLOR   = { OPEN: '#f85149', IN_PROGRESS: '#d29922', RESOLVED: '#3fb950', CLOSED: '#8b949e' };

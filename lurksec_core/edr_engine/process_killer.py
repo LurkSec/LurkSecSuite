@@ -4,9 +4,7 @@ import time
 from typing import Dict, Any
 
 class ProcessKiller:
-    """
-    Terminates target malicious PIDs and their spawned child process trees using taskkill and os.kill.
-    """
+    
 
     @staticmethod
     def kill_process(pid: int) -> Dict[str, Any]:

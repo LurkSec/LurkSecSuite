@@ -4,10 +4,7 @@ import urllib.request
 from typing import Dict, Any
 
 class HIBPChecker:
-    """
-    HIBP k-Anonymity SHA-1 prefix API breach checker.
-    Checks if a password hash prefix is in the HIBP database without exposing the full hash.
-    """
+    
 
     @staticmethod
     def check_password(password: str) -> Dict[str, Any]:

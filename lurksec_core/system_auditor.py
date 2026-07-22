@@ -3,9 +3,7 @@ import time
 from typing import Dict, List, Any
 
 class SystemAuditor:
-    """
-    LurkAudit: Audits Windows OS Hardening, Firewall Profiles, UAC, SMBv1, and Shared Drives.
-    """
+    
 
     @staticmethod
     def audit_os_hardening() -> Dict[str, Any]:

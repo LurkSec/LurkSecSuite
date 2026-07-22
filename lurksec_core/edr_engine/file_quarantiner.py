@@ -5,10 +5,7 @@ import time
 from typing import Dict, List, Any
 
 class FileQuarantiner:
-    """
-    Safely isolates suspicious binaries into a local .quarantine directory vault.
-    Calculates SHA-256 hash and revokes direct execution access.
-    """
+    
     QUARANTINE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".quarantine")
 
     @classmethod

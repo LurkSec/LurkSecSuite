@@ -2,10 +2,7 @@ import time
 from typing import Dict, List, Any
 
 class ZeroTrustEngine:
-    """
-    LurkZero: Zero Trust Network Access (ZTNA) & Posture Inspector.
-    Validates Mutual TLS (mTLS) client certificates, JWT tokens, and device security posture tokens.
-    """
+    
 
     POLICY_RULES = [
         {"id": "ZT-001", "name": "mTLS Certificate Verification", "status": "ACTIVE", "enforcement": "STRICT"},

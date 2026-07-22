@@ -4,10 +4,7 @@ import time
 from typing import Dict, List, Any
 
 class MemoryCarver:
-    """
-    Extracts process artifacts, ASCII strings, IP addresses, URLs, and IOCs from target PIDs.
-    Uses fast process path discovery with timeout safeguards.
-    """
+    
 
     @staticmethod
     def carve_process(pid: int) -> Dict[str, Any]:
