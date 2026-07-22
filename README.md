@@ -6,30 +6,31 @@ Built entirely in pure Python (standard library) with zero external dependencies
 
 ---
 
-## ⚡ Master Security Engines (13 Integrated Modules)
+## ⚡ Master Security Domains & Modules (13 Integrated Engines)
 
-### 🛡️ Command Center
-1. **LurkSOC (Master Incident Command)**: Correlates high-priority threats across all underlying engines into a unified incident feed.
+### 1. 🛡️ COMMAND CENTER
+- **Master Threat Feed** (`LurkSOC`): Real-time incident correlation across all 12 underlying security engines.
 
-### ⚡ Automation & Incident Response
-2. **LurkSOAR (Automation & IR Case Manager)**: Multi-stage automated remediation playbooks (IP isolation, process termination, file quarantine) and incident case management.
-3. **LurkEDR (Endpoint Detection & Response)**: Active response actions (Process Killer, Windows Firewall IP Blocker, File Quarantiner, and Process Memory Carver).
+### 2. ⚡ AUTOMATION & RESPONSE
+- **Playbooks & Cases** (`LurkSOAR`): Automated remediation playbooks (IP firewall blocks, host isolation, file quarantine) and incident case management.
+- **Endpoint Response** (`LurkEDR`): Active response actions (Process Killer, Windows Firewall IP Blocker, File Quarantiner, Memory Carver).
 
-### 🔍 Detection & Threat Hunting
-4. **LurkHunt (Threat Hunting & SIGMA/YARA Engine)**: Pure Python SIGMA detection rule parser (8 rules) and YARA-style memory/binary pattern scanner.
-5. **LurkIntel (Threat Intelligence & CTI Feed)**: Live Feodo CTI botnet feed parser, CISA Known Exploited Vulnerabilities (KEV) catalog, MITRE ATT&CK heatmap, and IOC matcher.
-6. **LurkSIEM (Log Correlation Engine)**: Windows Event Log parser (Security, System, App), logon audit stream (4624/4625), and brute-force rules.
-7. **LurkTrace (Process Execution Auditor)**: `Win32_Process` parent-child execution tree, command line inspection, and `%TEMP%` path anomaly rules.
+### 3. 🔍 DETECTION & THREAT HUNTING
+- **Threat Hunting** (`LurkHunt`): SIGMA detection rule parser (8 rules) & YARA-style memory string pattern scanner.
+- **Threat Intelligence** (`LurkIntel`): Feodo CTI botnet feed parser, CISA Known Exploited Vulnerabilities (KEV) catalog, MITRE ATT&CK heatmap, and IOC matcher.
+- **Windows Event Logs** (`LurkSIEM`): Windows Event Log parser (Security, System, App), logon audit stream (4624/4625), and brute-force rules.
+- **Process Trees** (`LurkTrace`): `Win32_Process` parent-child execution tree, command line inspection, and `%TEMP%` path anomaly rules.
 
-### 🛡️ Network & Boundary Defense
-8. **LurkShield (Web Application Firewall & Rate Limiter)**: OWASP Top 10 threat inspection (SQLi, XSS, RCE, LFI, Command Injection) and token-bucket per-IP rate limiter.
-9. **LurkSentinel (Network & Socket Inspector)**: Active listening sockets, PID process resolver, GeoIP flags (`Cloudflare`, `Microsoft Azure`), and 150-thread TCP port scanner.
-10. **LurkPacket (PCAP Protocol Inspector)**: DNS domain queries, HTTP headers, TLS SNI decoders, and Wireshark `.pcap` export generator.
-11. **LurkDecoy (Deception & Honeypots)**: Active low-interaction honeypot listeners (SSH:2222, FTP:2121, HTTP:8888, RDP:33890).
+### 4. 🌐 NETWORK & BOUNDARY DEFENSE
+- **Web Firewall** (`LurkShield`): OWASP Top 10 threat inspection (SQLi, XSS, RCE, LFI, Command Injection) and token-bucket per-IP rate limiter.
+- **Sockets & Ports** (`LurkSentinel`): Active listening sockets, PID process resolver, GeoIP flags (`Cloudflare`, `Microsoft Azure`), and 150-thread TCP port scanner.
+- **Packet Capture** (`LurkPacket`): DNS domain queries, HTTP headers, TLS SNI decoders, and Wireshark `.pcap` export generator.
+- **Deception Honeypots** (`LurkDecoy`): Active low-interaction honeypot listeners (SSH:2222, FTP:2121, HTTP:8888, RDP:33890).
 
-### 🆔 Identity & Cloud Hygiene
-12. **LurkIdentity (Identity Security & Credential Auditor)**: 10-pattern secret scanner (API keys, JWT, SSH keys), HaveIBeenPwned k-Anonymity hash-range breach checker, and password policy compliance.
-13. **LurkCloud (Multi-Cloud Security Posture Inspector)**: AWS S3/EC2/IAM & Azure NSG security posture auditor with graceful local baseline fallback.
+### 5. 🆔 IDENTITY & CLOUD HYGIENE
+- **Secrets & Passwords** (`LurkIdentity`): 10-pattern secret scanner (API keys, JWT, SSH keys), HaveIBeenPwned k-Anonymity hash-range breach checker, and password policy compliance.
+- **Cloud Security** (`LurkCloud`): AWS S3/EC2/IAM & Azure NSG security posture auditor with local baseline fallback.
+- **OS Hardening** (`LurkAudit`): Windows Firewall profiles, UAC, SMBv1, and hidden share compliance auditor.
 
 ---
 
@@ -92,7 +93,7 @@ LurkSecSuite/
 │   ├── soar_engine/                # LurkSOAR playbooks & case manager
 │   └── hunt_engine/                # LurkHunt SIGMA & YARA engine
 ├── web_console/                    # Master Front-End Operations Console
-│   ├── index.html                  # 15-Tab Categorized Web Console
+│   ├── index.html                  # High-Clarity Categorized Web Console
 │   ├── css/
 │   │   └── style.css               # Dark Charcoal theme with domain headers & custom scrollbars
 │   └── js/
