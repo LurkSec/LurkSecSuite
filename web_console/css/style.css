@@ -81,10 +81,11 @@ body {
 
 .nav-parent-btn {
     width: 100%;
-    display: flex;
+    display: grid;
+    grid-template-columns: 20px 1fr 14px;
     align-items: center;
-    justify-content: space-between;
-    padding: 9px 16px;
+    gap: 8px;
+    padding: 10px 14px;
     background: transparent;
     color: #ffffff;
     border: none;
@@ -101,6 +102,13 @@ body {
     color: var(--accent-blue);
 }
 
+.nav-parent-btn .title-wrap {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+    overflow: hidden;
+}
+
 .nav-parent-btn small {
     display: block;
     color: var(--text-muted);
@@ -111,14 +119,16 @@ body {
 }
 
 .nav-parent-btn svg {
-    margin-right: 8px;
+    margin-right: 0;
+    justify-self: center;
     flex-shrink: 0;
-    opacity: 0.8;
+    opacity: 0.85;
 }
 
 .nav-parent-btn .arrow {
-    font-size: 10px;
+    font-size: 9px;
     color: var(--text-muted);
+    justify-self: end;
 }
 
 .nav-sub-items {
@@ -139,12 +149,15 @@ body {
 
 .nav-sub-btn {
     display: block;
-    padding: 7px 16px 7px 38px;
+    padding: 8px 14px 8px 42px;
     color: var(--text-muted);
     text-decoration: none;
     font-size: 11px;
     font-weight: 500;
-    border-left: 2px solid transparent;
+    border-left: 3px solid transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .nav-sub-btn:hover {
