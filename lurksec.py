@@ -490,6 +490,35 @@ class DualStackServer(ThreadingHTTPServer):
             pass
         super().server_bind()
 
+def _free_port(port: int):
+    """Kill any existing process listening on *port* so we can bind cleanly."""
+    import subprocess
+    try:
+        # Find PIDs on the port via netstat
+        out = subprocess.check_output(
+            f'netstat -ano | findstr ":{port} "',
+            shell=True, text=True, errors="ignore"
+        )
+        pids = set()
+        for line in out.splitlines():
+            parts = line.split()
+            if parts:
+                try:
+                    pids.add(int(parts[-1]))
+                except ValueError:
+                    pass
+        our_pid = os.getpid()
+        for pid in pids:
+            if pid and pid != our_pid:
+                try:
+                    subprocess.call(f"taskkill /F /PID {pid}", shell=True,
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    print(f"[*] Freed port {port} from stale PID {pid}")
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
 def main():
     parser = argparse.ArgumentParser(description="LurkSec Unified Security Operations Suite Server")
     parser.add_argument("action", nargs="?", default="serve", choices=["serve", "audit"])
@@ -516,6 +545,12 @@ def main():
             if inc["severity"] in ["HIGH", "MEDIUM"]:
                 print(f"  [{inc['engine']}] ({inc['severity']}) {inc['title']} | Evidence: {inc['evidence']}")
     else:
+        # Kill any stale process already holding the port to avoid zombie pile-up
+        _free_port(args.port)
+        import time as _time
+        _time.sleep(0.5)  # brief pause so the OS releases the socket
+
+        httpd = None
         try:
             httpd = DualStackServer(("::", args.port), LurkSecHandler)
         except Exception:
@@ -525,13 +560,16 @@ def main():
                 print(f"[-] Failed to bind port {args.port}: {e}")
                 sys.exit(1)
 
-        url = f"http://localhost:{args.port}"
+        # Always open 127.0.0.1 — avoids Windows resolving 'localhost' -> ::1
+        url = f"http://127.0.0.1:{args.port}"
         print(f"[+] LurkSec Master Console listening on {url} (IPv4 & IPv6 Dual-Stack)")
         webbrowser.open(url)
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
             print("\n[-] Shutting down LurkSec Server.")
+        finally:
+            httpd.server_close()
 
 if __name__ == "__main__":
     main()
