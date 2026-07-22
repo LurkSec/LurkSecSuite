@@ -1058,11 +1058,30 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => setTimeout(loadHuntSuiteData, 100));
     });
 
+    document.getElementById('suite-hunt-sample-select')?.addEventListener('change', (e) => {
+        const input = document.getElementById('suite-hunt-input');
+        if (input && e.target.value) {
+            input.value = e.target.value;
+        }
+    });
+
     document.getElementById('btn-suite-hunt-scan')?.addEventListener('click', async () => {
         const input = document.getElementById('suite-hunt-input');
-        if (!input || !input.value) return;
-        await fetch(`/api/hunt/scan?sample=${encodeURIComponent(input.value)}`);
-        loadHuntSuiteData();
+        const output = document.getElementById('suite-hunt-output');
+        if (!input || !input.value) {
+            alert("Please enter or select a payload string to scan.");
+            return;
+        }
+
+        output.innerText = `[+] Scanning payload string against 8 SIGMA rules & 5 YARA signatures...`;
+        try {
+            const res = await fetch(`/api/hunt/scan?sample=${encodeURIComponent(input.value)}`);
+            const result = await res.json();
+            output.innerText = `[+] SCAN RESULT: Matches Found: ${result.matches_count}\n` + JSON.stringify(result, null, 2);
+            await loadHuntSuiteData();
+        } catch(e) {
+            output.innerText = `[-] Scan Execution Error: ${e.message}`;
+        }
     });
 });
 
@@ -1115,19 +1134,53 @@ async function loadHuntSuiteData() {
         document.getElementById('suite-hunt-yara-count').innerText = d.yara_sigs_count || 5;
         document.getElementById('suite-hunt-hits-count').innerText = (d.recent_hits || []).length;
         renderHuntHits(d.recent_hits || []);
+        renderSigmaRules(d.sigma_rules || []);
+        renderYaraSignatures(d.yara_signatures || []);
     } catch(e) { console.warn('Hunt API error:', e); }
 }
 
 function renderHuntHits(hits) {
     const c = document.getElementById('suite-hunt-hits-container');
     if (!c) return;
+    if (hits.length === 0) {
+        c.innerHTML = `<div class="compliance-card PASS"><div class="compliance-header"><span class="compliance-title"><strong>[NO_THREATS_DETECTED]</strong> Zero threat hits recorded</span><span class="compliance-tag PASS">CLEAN</span></div><div class="compliance-desc">Run an interactive payload scan above to trigger SIGMA/YARA detection hits.</div></div>`;
+        return;
+    }
     c.innerHTML = hits.map(h => `
         <div class="compliance-card ${h.severity === 'CRITICAL' || h.severity === 'HIGH' ? 'HIGH' : 'MEDIUM'}">
             <div class="compliance-header">
                 <span class="compliance-title"><strong>[${h.rule_id || h.sig_id}]</strong> ${h.title || h.sig_name}</span>
                 <span class="compliance-tag ${h.severity}">${h.severity}</span>
             </div>
-            <div class="compliance-desc">Source: <code>${h.source || 'System Scan'}</code><br>Matched Payload: <code>${h.matched_sample || h.matched_pattern || ''}</code></div>
+            <div class="compliance-desc">Category: <code>${h.category || h.type || 'Detection'}</code> | Source: <code>${h.source || 'System Scan'}</code><br>Matched Payload: <code>${h.matched_sample || h.matched_pattern || ''}</code></div>
+        </div>
+    `).join("");
+}
+
+function renderSigmaRules(rules) {
+    const c = document.getElementById('suite-hunt-sigma-container');
+    if (!c) return;
+    c.innerHTML = rules.map(r => `
+        <div class="compliance-card ${r.severity}" style="margin-bottom:8px;">
+            <div class="compliance-header">
+                <span class="compliance-title"><strong>[${r.id}]</strong> ${r.title}</span>
+                <span class="compliance-tag ${r.severity}">${r.severity}</span>
+            </div>
+            <div class="compliance-desc">${r.description}<br><code style="color:#58a6ff;">MITRE: ${r.mitre_id}</code> | Pattern: <code>${r.pattern}</code></div>
+        </div>
+    `).join("");
+}
+
+function renderYaraSignatures(sigs) {
+    const c = document.getElementById('suite-hunt-yara-container');
+    if (!c) return;
+    c.innerHTML = sigs.map(s => `
+        <div class="compliance-card ${s.severity === 'CRITICAL' ? 'HIGH' : s.severity}" style="margin-bottom:8px;">
+            <div class="compliance-header">
+                <span class="compliance-title"><strong>[${s.id}]</strong> ${s.name}</span>
+                <span class="compliance-tag ${s.severity}">${s.severity}</span>
+            </div>
+            <div class="compliance-desc">${s.description}<br><code style="color:#3fb950;">Type: ${s.type}</code> | Pattern: <code>${s.pattern}</code></div>
         </div>
     `).join("");
 }

