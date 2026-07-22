@@ -8,7 +8,7 @@ class SIEMLogParser:
     def get_real_events(max_events: int = 100) -> List[Dict[str, Any]]:
         events = []
         limit = max_events // 2
-        ps_script =  + str(limit) + 
+        ps_script = "Get-WinEvent -MaxEvents " + str(limit) + " -FilterHashtable @{LogName='Security','System','Application'} -ErrorAction SilentlyContinue | Select-Object Id,LogName,ProviderName,TimeCreated,LevelDisplayName,Message,@{n='User';e={$_.UserId}} | ConvertTo-Json -Compress"
 
         try:
             out = subprocess.check_output(

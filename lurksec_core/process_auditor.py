@@ -14,7 +14,7 @@ class ProcessAuditor:
             return cls._CACHED_PROCESSES
 
         processes = []
-        ps_script = 
+        ps_script = "Get-WmiObject Win32_Process | Select-Object ProcessId,Name,ExecutablePath,CommandLine,@{n='ParentProcessId';e={$_.ParentProcessId}} | ConvertTo-Json -Compress"
 
         try:
             out = subprocess.check_output(
