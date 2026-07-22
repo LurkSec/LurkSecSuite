@@ -463,6 +463,10 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+class LurkSecServer(ThreadingHTTPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
 def main():
     parser = argparse.ArgumentParser(description="LurkSec Unified Security Operations Suite Server")
     parser.add_argument("action", nargs="?", default="serve", choices=["serve", "audit"])
@@ -489,8 +493,8 @@ def main():
             if inc["severity"] in ["HIGH", "MEDIUM"]:
                 print(f"  [{inc['engine']}] ({inc['severity']}) {inc['title']} | Evidence: {inc['evidence']}")
     else:
-        server_address = ("", args.port)
-        httpd = ThreadingHTTPServer(server_address, LurkSecHandler)
+        server_address = ("0.0.0.0", args.port)
+        httpd = LurkSecServer(server_address, LurkSecHandler)
         url = f"http://localhost:{args.port}"
         print(f"[+] LurkSec Master Console listening on {url}")
         webbrowser.open(url)
