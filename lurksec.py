@@ -306,7 +306,8 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
         audit_summary = SystemAuditor.audit_os_hardening()
 
         soc_incidents = SOCAggregator.aggregate_incidents(
-            sockets, siem_alerts, decoy_summary, packet_alerts, process_alerts, audit_summary
+            sockets, siem_alerts, decoy_summary, packet_alerts, process_alerts, audit_summary,
+            edr_logs=EDR_ACTION_LOGS, waf_logs=WAF_BLOCK_LOG, soar_cases=SOAR_CASES.get_cases(), hunt_hits=HUNT_HITS
         )
 
         return {

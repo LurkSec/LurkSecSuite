@@ -3,7 +3,7 @@ from typing import Dict, List, Any
 
 class SOCAggregator:
     """
-    LurkSOC: Master Incident Command Feed correlating alerts across all sub-engines.
+    LurkSOC: Master Incident Command Feed correlating telemetry across all 13 sub-engines.
     """
 
     @staticmethod
@@ -13,7 +13,14 @@ class SOCAggregator:
         decoy_summary: Dict[str, Any],
         packet_alerts: Dict[str, Any],
         process_alerts: Dict[str, Any],
-        audit_summary: Dict[str, Any]
+        audit_summary: Dict[str, Any],
+        edr_logs: List[Dict[str, Any]] = None,
+        waf_logs: List[Dict[str, Any]] = None,
+        cti_matches: List[Dict[str, Any]] = None,
+        identity_findings: List[Dict[str, Any]] = None,
+        cloud_findings: List[Dict[str, Any]] = None,
+        soar_cases: List[Dict[str, Any]] = None,
+        hunt_hits: List[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         incidents = []
         now_str = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -88,7 +95,64 @@ class SOCAggregator:
                     "evidence": au["details"]
                 })
 
-        # Default PASS card if zero high/medium incidents
+        # 6. Collect EDR Action Logs (LurkEDR)
+        if edr_logs:
+            for ed in edr_logs:
+                incidents.append({
+                    "incident_id": f"INC-EDR-{int(time.time())}",
+                    "timestamp": ed.get("timestamp", now_str),
+                    "engine": "LurkEDR",
+                    "category": "Active Response",
+                    "title": f"EDR Action: {ed.get('action_type', 'Enforcement')}",
+                    "severity": "HIGH" if ed.get("success") else "MEDIUM",
+                    "origin": "Endpoint Agent",
+                    "evidence": f"Target: {ed.get('target')} | Outcome: {ed.get('message')}"
+                })
+
+        # 7. Collect Threat Hunting Matches (LurkHunt)
+        if hunt_hits:
+            for hh in hunt_hits:
+                incidents.append({
+                    "incident_id": f"INC-HUNT-{hh.get('rule_id') or hh.get('sig_id')}",
+                    "timestamp": now_str,
+                    "engine": "LurkHunt",
+                    "category": "Threat Detection",
+                    "title": f"Rule Match: {hh.get('title') or hh.get('sig_name')}",
+                    "severity": hh.get("severity", "HIGH"),
+                    "origin": hh.get("source", "Memory/Disk"),
+                    "evidence": f"Matched Sample: {hh.get('matched_sample') or hh.get('matched_pattern')}"
+                })
+
+        # 8. Collect SOAR Incident Cases (LurkSOAR)
+        if soar_cases:
+            for sc in soar_cases:
+                if sc.get("status") in ["OPEN", "IN_PROGRESS"]:
+                    incidents.append({
+                        "incident_id": f"INC-SOAR-{sc['case_id']}",
+                        "timestamp": sc.get("created_at", now_str),
+                        "engine": "LurkSOAR",
+                        "category": "SOC Case Management",
+                        "title": f"Active Case: {sc['title']}",
+                        "severity": sc.get("severity", "MEDIUM"),
+                        "origin": f"Assigned: {sc.get('assigned_to')}",
+                        "evidence": sc.get("description", "")
+                    })
+
+        # 9. Collect WAF Block Events (LurkShield)
+        if waf_logs:
+            for wf in waf_logs:
+                incidents.append({
+                    "incident_id": f"INC-WAF-{int(time.time())}",
+                    "timestamp": wf.get("timestamp", now_str),
+                    "engine": "LurkShield",
+                    "category": "WAF Protection",
+                    "title": f"Blocked Payload: {wf.get('rule_matched')}",
+                    "severity": "HIGH",
+                    "origin": f"Remote IP: {wf.get('ip')}",
+                    "evidence": f"URI: {wf.get('uri')}"
+                })
+
+        # Default PASS card if zero incidents
         if not incidents:
             incidents.append({
                 "incident_id": "INC-PASS-001",
@@ -98,7 +162,7 @@ class SOCAggregator:
                 "title": "Master Incident Feed Baseline Clean",
                 "severity": "LOW",
                 "origin": "LurkSec Command Suite",
-                "evidence": "Zero high-risk security threats detected across all 6 engines."
+                "evidence": "Zero high-risk security threats detected across all 13 engines."
             })
 
         high_count = sum(1 for i in incidents if i["severity"] == "HIGH")
