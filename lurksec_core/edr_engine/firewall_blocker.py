@@ -5,6 +5,7 @@ from typing import Dict, List, Any
 class FirewallBlocker:
     """
     Manages Windows Firewall rules to dynamically block & unblock malicious remote IPs.
+    Includes subprocess timeout controls for instant web response.
     """
 
     @staticmethod
@@ -24,8 +25,8 @@ class FirewallBlocker:
         cmd_out = f'netsh advfirewall firewall add rule name="{rule_name}-OUT" dir=out action=block remoteip={clean_ip}'
 
         try:
-            subprocess.check_output(cmd_in, shell=True, text=True, stderr=subprocess.STDOUT, errors="ignore")
-            subprocess.check_output(cmd_out, shell=True, text=True, stderr=subprocess.STDOUT, errors="ignore")
+            subprocess.check_output(cmd_in, shell=True, text=True, stderr=subprocess.STDOUT, timeout=3, errors="ignore")
+            subprocess.check_output(cmd_out, shell=True, text=True, stderr=subprocess.STDOUT, timeout=3, errors="ignore")
             return {
                 "success": True,
                 "timestamp": now,
@@ -33,12 +34,19 @@ class FirewallBlocker:
                 "rule_name": rule_name,
                 "message": f"Windows Firewall Inbound & Outbound block rules active for IP '{clean_ip}'."
             }
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "timestamp": now,
+                "ip": clean_ip,
+                "message": "Firewall command timed out (netsh requires Administrative privileges)."
+            }
         except subprocess.CalledProcessError as e:
             return {
                 "success": False,
                 "timestamp": now,
                 "ip": clean_ip,
-                "message": f"Firewall command execution notice: {e.output.strip() if e.output else str(e)}"
+                "message": f"Firewall rule notice: {e.output.strip() if e.output else str(e)}"
             }
         except Exception as ex:
             return {
@@ -57,18 +65,18 @@ class FirewallBlocker:
         cmd_out = f'netsh advfirewall firewall delete rule name="{rule_name}-OUT"'
 
         try:
-            subprocess.check_output(cmd_in, shell=True, text=True, stderr=subprocess.STDOUT, errors="ignore")
-            subprocess.check_output(cmd_out, shell=True, text=True, stderr=subprocess.STDOUT, errors="ignore")
+            subprocess.check_output(cmd_in, shell=True, text=True, stderr=subprocess.STDOUT, timeout=3, errors="ignore")
+            subprocess.check_output(cmd_out, shell=True, text=True, stderr=subprocess.STDOUT, timeout=3, errors="ignore")
             return {
                 "success": True,
                 "timestamp": now,
                 "ip": clean_ip,
-                "message": f"Firewall block rules deleted for IP '{clean_ip}'."
+                "message": f"Windows Firewall rules removed for IP '{clean_ip}'."
             }
         except Exception as ex:
             return {
                 "success": False,
                 "timestamp": now,
                 "ip": clean_ip,
-                "message": f"Rule removal notice: {str(ex)}"
+                "message": f"Firewall unblock notice: {str(ex)}"
             }

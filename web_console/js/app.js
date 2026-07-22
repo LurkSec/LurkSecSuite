@@ -465,8 +465,8 @@ function setupEventListeners() {
                 const res = await fetch(`/api/edr/kill?pid=${pidVal}`);
                 const result = await res.json();
                 outputConsole.innerText = JSON.stringify(result, null, 2);
-                await loadMasterData();
-            } catch (e) { outputConsole.innerText = `[-] Error: ${e.message}`; }
+                try { await loadMasterData(); } catch(err) {}
+            } catch (e) { outputConsole.innerText = `[-] EDR Action Output:\n${e.message}`; }
         });
     }
 
@@ -481,8 +481,8 @@ function setupEventListeners() {
                 const res = await fetch(`/api/edr/block?ip=${encodeURIComponent(ipVal)}`);
                 const result = await res.json();
                 outputConsole.innerText = JSON.stringify(result, null, 2);
-                await loadMasterData();
-            } catch (e) { outputConsole.innerText = `[-] Error: ${e.message}`; }
+                try { await loadMasterData(); } catch(err) {}
+            } catch (e) { outputConsole.innerText = `[-] EDR Action Output:\n${e.message}`; }
         });
     }
 
@@ -497,8 +497,8 @@ function setupEventListeners() {
                 const res = await fetch(`/api/edr/quarantine?path=${encodeURIComponent(pathVal)}`);
                 const result = await res.json();
                 outputConsole.innerText = JSON.stringify(result, null, 2);
-                await loadMasterData();
-            } catch (e) { outputConsole.innerText = `[-] Error: ${e.message}`; }
+                try { await loadMasterData(); } catch(err) {}
+            } catch (e) { outputConsole.innerText = `[-] EDR Action Output:\n${e.message}`; }
         });
     }
 
@@ -513,8 +513,8 @@ function setupEventListeners() {
                 const res = await fetch(`/api/edr/carve?pid=${pidVal}`);
                 const result = await res.json();
                 outputConsole.innerText = JSON.stringify(result, null, 2);
-                await loadMasterData();
-            } catch (e) { outputConsole.innerText = `[-] Error: ${e.message}`; }
+                try { await loadMasterData(); } catch(err) {}
+            } catch (e) { outputConsole.innerText = `[-] EDR Action Output:\n${e.message}`; }
         });
     }
 

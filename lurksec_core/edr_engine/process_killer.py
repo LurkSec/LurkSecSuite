@@ -20,12 +20,19 @@ class ProcessKiller:
 
         try:
             cmd = f"taskkill /F /T /PID {pid}"
-            out = subprocess.check_output(cmd, shell=True, text=True, stderr=subprocess.STDOUT, errors="ignore")
+            out = subprocess.check_output(cmd, shell=True, text=True, stderr=subprocess.STDOUT, timeout=3, errors="ignore")
             return {
                 "success": True,
                 "timestamp": now,
                 "pid": pid,
                 "message": f"Process PID {pid} & spawned tree successfully terminated: {out.strip()}"
+            }
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "timestamp": now,
+                "pid": pid,
+                "message": f"Taskkill command timed out while targeting PID {pid}."
             }
         except subprocess.CalledProcessError as e:
             return {
