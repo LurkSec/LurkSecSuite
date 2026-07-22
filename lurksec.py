@@ -33,8 +33,6 @@ from lurksec_core.shield_engine.rate_limiter import RateLimiter
 from lurksec_core.intel_engine.cti_engine import CTIFeedManager, IOCMatcher, MITREMapper
 from lurksec_core.identity_engine.identity_engine import SecretScanner, PolicyAuditor
 from lurksec_core.identity_engine.hibp_checker import HIBPChecker
-from lurksec_core.identity_engine.identity_engine import SecretScanner, PolicyAuditor
-from lurksec_core.identity_engine.hibp_checker import HIBPChecker
 from lurksec_core.cloud_engine.cloud_engine import AWSInspector, AzureInspector, BaselineAuditor
 
 from lurksec_core.soar_engine.playbook_runner import PlaybookRunner
@@ -380,7 +378,19 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
 
         except Exception as e:
             traceback.print_exc()
-            self.send_error(500, f"Server Error: {str(e)}")
+            # Always emit a complete HTTP response so the browser never sees
+            # ERR_EMPTY_RESPONSE from a half-written / no-response socket.
+            try:
+                body = json.dumps({"error": str(e)}).encode()
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Connection", "close")
+                self.end_headers()
+                self.wfile.write(body)
+                self.wfile.flush()
+            except Exception:
+                pass
 
     def get_master_summary(self):
         host_info = SystemNetworkInfo.get_host_details()
@@ -469,31 +479,7 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
         self.wfile.flush()
 
-def main():
-    parser = argparse.ArgumentParser(description="LurkSec Unified Security Operations Suite Server")
-    parser.add_argument("action", nargs="?", default="serve", choices=["serve", "audit"])
-    parser.add_argument("--port", type=int, default=8000)
-    args = parser.parse_args()
 
-    if args.action == "audit":
-        print("[*] Running Master LurkSec Security Audit across all engines...")
-        host = SystemNetworkInfo.get_host_details()
-        sockets = SystemNetworkInfo.get_network_sockets()
-        events = SIEMLogParser.get_real_events(30)
-        siem_alerts = SIEMCorrelator(events).evaluate_rules()
-        decoy = DECOY_MANAGER.get_summary()
-        pkts = PacketInspector.capture_live_packets(10)
-        pkt_alerts = PacketInspector.evaluate_threats(pkts)
-        procs = ProcessAuditor.get_live_processes()
-        proc_alerts = ProcessAuditor.evaluate_anomalies(procs)
-        audit = SystemAuditor.audit_os_hardening()
-
-        soc = SOCAggregator.aggregate_incidents(sockets, siem_alerts, decoy, pkt_alerts, proc_alerts, audit)
-        print(f"[+] Master Audit Complete. Correlated Incidents: {soc['total_incidents']} (High Risk: {soc['severity_counts']['HIGH']}).")
-        print(f"[+] OS Hardening Compliance Score: {audit['score']}%")
-        for inc in soc["incidents"]:
-            if inc["severity"] in ["HIGH", "MEDIUM"]:
-                print(f"  [{inc['engine']}] ({inc['severity']}) {inc['title']} | Evidence: {inc['evidence']}")
 class DualStackServer(ThreadingHTTPServer):
     address_family = socket.AF_INET6
 
