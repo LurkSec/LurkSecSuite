@@ -314,6 +314,8 @@ function renderEDRLogs() {
                 vaultTbody.appendChild(tr);
             });
         }
+    }
+
     const agentsContainer = document.getElementById('container-connected-agents');
     const badgeAgents = document.getElementById('badge-connected-agents');
     const connectedAgents = edr.connected_agents || [];
@@ -340,6 +342,7 @@ function renderEDRLogs() {
         }
     }
 }
+
 
 
 function renderSocketsTable(filteredSockets = null) {
