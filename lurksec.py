@@ -70,10 +70,6 @@ THREAT_FEED = ThreatFeedManager()
 HUNT_HITS = []
 RESOLVED_INCIDENTS = set()
 
-
-
-
-
 class LurkSecHandler(SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
 
@@ -81,7 +77,16 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
         web_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web_console")
         super().__init__(*args, directory=web_dir, **kwargs)
 
+    def end_headers(self):
+
+
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
     def do_GET(self):
+
         parsed = urlparse(self.path)
         path = parsed.path
         params = parse_qs(parsed.query)

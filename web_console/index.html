@@ -7,7 +7,19 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260723_v11">
+
+
+
+
+
+
+
+
+
+
+
+
 </head>
 
 <body>
@@ -19,21 +31,52 @@
                 <span class="header-sub">SECURITY OPERATIONS CENTER</span>
             </div>
             <div class="header-center">
-                <span id="sys-host-display">HOST: Loading...</span>
+                <span id="sys-host-display">HOST: --</span>
                 <span class="sep">|</span>
-                <span id="sys-ip-display">IP: Loading...</span>
+                <span id="sys-ip-display">IP: --</span>
                 <span class="sep">|</span>
-                <span id="sys-os-display">OS: Windows</span>
+                <span id="sys-os-display">OS: --</span>
                 <span class="sep">|</span>
-                <span class="status-pass">[ MASTER COMMAND ACTIVE ]</span>
+                <div class="global-search-wrap">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="global-search-input" class="global-search-input" placeholder="Search IP, CVE, Event ID, Process... (Press / or Ctrl+K)">
+                    <kbd class="search-kbd">/</kbd>
+                </div>
             </div>
-            <div class="header-right" style="display:flex;gap:6px;align-items:center;">
-                <a href="/api/report/html" target="_blank" class="btn btn-outline" style="font-size:11px;">Export HTML Audit</a>
-                <a href="/api/pcap" class="btn btn-outline" style="font-size:11px;">Export PCAP</a>
-                <a href="/api/report/json" target="_blank" class="btn btn-outline" style="font-size:11px;">Export JSON</a>
-                <button id="btn-auto-refresh" class="btn btn-outline">Auto-Refresh: OFF</button>
-                <button id="btn-quick-scan" class="btn btn-outline">Refresh Suite</button>
+
+            <div class="header-right" style="display:flex;gap:10px;align-items:center;">
+                <button id="btn-shortcuts-help" class="btn btn-outline" title="Analyst Keyboard Shortcuts (?)" style="padding:5px 9px;">
+                    <span style="font-family:var(--font-mono);font-weight:700;font-size:11px;">?</span>
+                </button>
+                <div class="dropdown-wrap">
+
+
+                    <button id="btn-export-dropdown" class="btn btn-outline" style="gap:6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Export Reports</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div id="export-dropdown-menu" class="dropdown-menu">
+                        <a href="/api/report/html" target="_blank" class="dropdown-item">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            Export HTML Audit Report
+                        </a>
+                        <a href="/api/report/json" target="_blank" class="dropdown-item">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+                            Export JSON Security Audit
+                        </a>
+                        <a href="/api/report/md" target="_blank" class="dropdown-item">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                            Export Markdown Audit
+                        </a>
+                        <a href="/api/pcap" class="dropdown-item">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                            Export PCAP Network Capture
+                        </a>
+                    </div>
+                </div>
             </div>
+
         </header>
 
         <div class="app-body">
@@ -285,25 +328,27 @@
                     <div class="summary-grid">
                         <div class="summary-card">
                             <span class="card-label">CORRELATED INCIDENTS</span>
-                            <div class="card-value" id="metric-soc-incidents">0</div>
+                            <div class="card-value" id="metric-soc-incidents">--</div>
                             <span class="card-sub">Master Threat Feed</span>
                         </div>
                         <div class="summary-card">
                             <span class="card-label">HIGH SEVERITY</span>
-                            <div class="card-value" id="metric-soc-high" style="color:#f85149;">0</div>
+                            <div class="card-value" id="metric-soc-high" style="color:#f85149;">--</div>
                             <span class="card-sub">Immediate Action Items</span>
                         </div>
                         <div class="summary-card">
                             <span class="card-label">OS HARDENING SCORE</span>
-                            <div class="card-value" id="metric-soc-score" style="color:#3fb950;">100%</div>
+                            <div class="card-value" id="metric-soc-score">--</div>
                             <span class="card-sub">Windows Baseline State</span>
                         </div>
                         <div class="summary-card">
                             <span class="card-label">ACTIVE ENGINES</span>
-                            <div class="card-value" style="color:#3fb950;font-size:16px;margin-top:6px;">7 ENGINES ONLINE</div>
-                            <span class="card-sub">Full Suite + EDR Monitored</span>
+                            <div class="card-value" id="metric-soc-engines" style="font-size:14px;margin-top:6px;color:var(--text-muted);">LOADING...</div>
+                            <span class="card-sub">Active Security Modules</span>
                         </div>
+
                     </div>
+
 
                     <div class="panel-box chart-panel" style="height:250px;margin-bottom:20px;">
                         <div class="panel-header">Cross-Engine Threat Distribution</div>
@@ -311,6 +356,42 @@
                             <canvas id="chart-soc-threats"></canvas>
                         </div>
                     </div>
+
+                    <!-- MITRE ATT&CK® Enterprise Tactic Alignment Grid -->
+                    <div class="panel-box" style="margin-bottom:24px;">
+                        <div class="panel-header-flex">
+                            <span>MITRE ATT&CK® Enterprise Tactic & TTP Alignment Grid</span>
+                            <span style="font-family:var(--font-mono);font-size:11px;color:var(--accent-blue);">v14.1 FRAMEWORK MAPPED</span>
+                        </div>
+                        <div class="mitre-grid">
+                            <div class="mitre-col">
+                                <div class="mitre-header">INITIAL ACCESS</div>
+                                <div class="mitre-card"><span class="mitre-id">T1190</span><span class="mitre-name">Exploit Public App</span><span class="mitre-status detected">ACTIVE WAF LOG</span></div>
+                                <div class="mitre-card"><span class="mitre-id">T1566</span><span class="mitre-name">Phishing / Attachment</span><span class="mitre-status">MONITORED</span></div>
+                            </div>
+                            <div class="mitre-col">
+                                <div class="mitre-header">EXECUTION</div>
+                                <div class="mitre-card"><span class="mitre-id">T1059.001</span><span class="mitre-name">PowerShell / Cmd</span><span class="mitre-status detected">LURKTRACE MATCH</span></div>
+                                <div class="mitre-card"><span class="mitre-id">T1204</span><span class="mitre-name">User Execution</span><span class="mitre-status">MONITORED</span></div>
+                            </div>
+                            <div class="mitre-col">
+                                <div class="mitre-header">PRIV ESCALATION</div>
+                                <div class="mitre-card"><span class="mitre-id">T1068</span><span class="mitre-name">Exploit for Priv Esc</span><span class="mitre-status detected">LURKVULN CVE</span></div>
+                                <div class="mitre-card"><span class="mitre-id">T1548</span><span class="mitre-name">UAC Bypass Check</span><span class="mitre-status detected">AUDIT AUDITED</span></div>
+                            </div>
+                            <div class="mitre-col">
+                                <div class="mitre-header">CREDENTIAL ACCESS</div>
+                                <div class="mitre-card"><span class="mitre-id">T1552</span><span class="mitre-name">Unsecured Credentials</span><span class="mitre-status detected">IDENTITY MATCH</span></div>
+                                <div class="mitre-card"><span class="mitre-id">T1110</span><span class="mitre-name">Brute Force (4625)</span><span class="mitre-status detected">SIEM LOGGED</span></div>
+                            </div>
+                            <div class="mitre-col">
+                                <div class="mitre-header">DEFENSE EVASION</div>
+                                <div class="mitre-card"><span class="mitre-id">T1027</span><span class="mitre-name">Obfuscated Code</span><span class="mitre-status detected">SANDBOX CHECKED</span></div>
+                                <div class="mitre-card"><span class="mitre-id">T1562</span><span class="mitre-name">Impair Defenses</span><span class="mitre-status">MONITORED</span></div>
+                            </div>
+                        </div>
+                    </div>
+
 
                     <!-- Master Incident Containment Console -->
                     <div class="panel-box" style="margin-bottom:16px;">
@@ -410,24 +491,36 @@
                     <!-- EDR POLICY ENGINE PANEL -->
                     <div class="panel-box" style="margin-top:20px;">
                         <div class="panel-header-flex"><span>Automated EDR Prevention Policies</span></div>
-                        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
-                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-                                <input type="text" id="policy-new-name" class="filter-input" placeholder="Rule Name (e.g. Block Encoded PS)">
-                                <input type="text" id="policy-new-proc" class="filter-input" placeholder="Target Process (e.g. powershell.exe)">
-                                <input type="text" id="policy-new-cmd" class="filter-input" placeholder="Command Line Keyword (e.g. -enc)">
-                            </div>
-                            <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;">
-                                <span style="font-family:var(--font-mono);font-size:12px;color:#8b949e;">Trigger Action:</span>
-                                <select id="policy-new-action" class="filter-input" style="width:180px;">
-                                    <option value="KILL_PROCESS">KILL_PROCESS</option>
-                                    <option value="QUARANTINE_FILE">QUARANTINE_FILE</option>
-                                    <option value="BLOCK_IP">BLOCK_IP</option>
-                                </select>
-                                <button id="btn-add-policy" class="btn btn-primary" style="padding:6px 16px;">+ Add Policy Rule</button>
+                        <div style="padding:16px;background:#11151c;border-bottom:1px solid var(--panel-border);">
+                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 180px auto;gap:12px;align-items:end;">
+                                <div>
+                                    <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Rule Name</label>
+                                    <input type="text" id="policy-new-name" class="filter-input" style="width:100%;" placeholder="e.g. Block Encoded PS">
+                                </div>
+                                <div>
+                                    <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Target Process</label>
+                                    <input type="text" id="policy-new-proc" class="filter-input" style="width:100%;" placeholder="e.g. powershell.exe">
+                                </div>
+                                <div>
+                                    <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Command Keyword</label>
+                                    <input type="text" id="policy-new-cmd" class="filter-input" style="width:100%;" placeholder="e.g. -enc">
+                                </div>
+                                <div>
+                                    <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Trigger Action</label>
+                                    <select id="policy-new-action" class="filter-input" style="width:100%;">
+                                        <option value="KILL_PROCESS">KILL_PROCESS</option>
+                                        <option value="QUARANTINE_FILE">QUARANTINE_FILE</option>
+                                        <option value="BLOCK_IP">BLOCK_IP</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <button id="btn-add-policy" class="btn btn-primary" style="padding:7px 16px;">+ Add Policy Rule</button>
+                                </div>
                             </div>
                         </div>
-                        <div id="edr-policies-container" style="padding:0 16px 16px;display:flex;flex-direction:column;gap:8px;"></div>
+                        <div id="edr-policies-container" style="padding:16px;display:flex;flex-direction:column;gap:12px;"></div>
                     </div>
+
                 </section>
 
 
@@ -613,17 +706,14 @@
                 <!-- PAGE 9: LURKDECOY LISTENERS -->
                 <section id="tab-decoy-status" class="tab-page">
                     <div class="section-title">
-                        <h2>LurkDecoy - Active Honeypot Ports</h2>
-                        <span class="section-subtitle">Listening decoy sockets status</span>
+                        <h2>LurkDecoy - Active Honeypot Decoy Sockets</h2>
+                        <span class="section-subtitle">Real-time listening decoy sockets and banner trap status</span>
                     </div>
 
-                    <div class="summary-grid">
-                        <div class="summary-card"><span class="card-label">SSH DECOY</span><div class="card-value">Port 2222</div><span class="card-sub" style="color:#3fb950;">LISTENING</span></div>
-                        <div class="summary-card"><span class="card-label">FTP DECOY</span><div class="card-value">Port 2121</div><span class="card-sub" style="color:#3fb950;">LISTENING</span></div>
-                        <div class="summary-card"><span class="card-label">HTTP DECOY</span><div class="card-value">Port 8888</div><span class="card-sub" style="color:#3fb950;">LISTENING</span></div>
-                        <div class="summary-card"><span class="card-label">RDP DECOY</span><div class="card-value">Port 33890</div><span class="card-sub" style="color:#3fb950;">LISTENING</span></div>
+                    <div id="decoy-listeners-container" class="summary-grid" style="grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));">
                     </div>
                 </section>
+
 
                 <!-- PAGE 10: LURKPACKET STREAM & PCAP -->
                 <section id="tab-packet-stream" class="tab-page">
@@ -796,11 +886,12 @@
                 <section id="tab-shield-overview" class="tab-page">
                     <div class="section-title"><h2>LurkShield - WAF Overview</h2><span class="section-subtitle">OWASP Top 10 real-time block log and rule engine status</span></div>
                     <div class="summary-grid">
-                        <div class="summary-card"><span class="card-label">TOTAL INSPECTED</span><div class="card-value" id="suite-shield-inspected">0</div><span class="card-sub">Requests Inspected</span></div>
-                        <div class="summary-card"><span class="card-label">TOTAL BLOCKED</span><div class="card-value" id="suite-shield-blocked" style="color:#f85149;">0</div><span class="card-sub">Malicious Requests</span></div>
-                        <div class="summary-card"><span class="card-label">HIGH SEVERITY</span><div class="card-value" id="suite-shield-high" style="color:#d29922;">0</div><span class="card-sub">Critical Threat Payloads</span></div>
-                        <div class="summary-card"><span class="card-label">ACTIVE RULES</span><div class="card-value" id="suite-shield-rules" style="color:#3fb950;">6</div><span class="card-sub">OWASP Rule Signatures</span></div>
+                        <div class="summary-card"><span class="card-label">TOTAL INSPECTED</span><div class="card-value" id="suite-shield-inspected">--</div><span class="card-sub">Requests Inspected</span></div>
+                        <div class="summary-card"><span class="card-label">TOTAL BLOCKED</span><div class="card-value" id="suite-shield-blocked" style="color:#f85149;">--</div><span class="card-sub">Malicious Requests</span></div>
+                        <div class="summary-card"><span class="card-label">HIGH SEVERITY</span><div class="card-value" id="suite-shield-high" style="color:#d29922;">--</div><span class="card-sub">Critical Threat Payloads</span></div>
+                        <div class="summary-card"><span class="card-label">ACTIVE RULES</span><div class="card-value" id="suite-shield-rules">--</div><span class="card-sub">OWASP Rule Signatures</span></div>
                     </div>
+
                     <div class="panel-box">
                         <div class="panel-header-flex"><span>WAF Block Log</span><div class="button-group"><button id="btn-suite-shield-json" class="btn btn-outline">Export (JSON)</button><button id="btn-suite-shield-csv" class="btn btn-outline">Export (CSV)</button></div></div>
                         <table class="raw-table"><thead><tr><th class="col-time">Timestamp</th><th class="col-proto">Method</th><th class="col-msg">URI</th><th class="col-ip">Client IP</th><th class="col-id">Action</th><th class="col-proc">Rule</th></tr></thead><tbody id="suite-shield-log-tbody"></tbody></table>
@@ -844,11 +935,12 @@
                 <section id="tab-intel-overview" class="tab-page">
                     <div class="section-title"><h2>LurkIntel - CTI Threat Intelligence</h2><span class="section-subtitle">Live ThreatFox IOC sync & cross-referenced system socket connections</span></div>
                     <div class="summary-grid">
-                        <div class="summary-card"><span class="card-label">LIVE CTI FEED</span><div class="card-value" id="suite-intel-feed">0</div><span class="card-sub" id="intel-feed-status">Tracked IOCs</span></div>
-                        <div class="summary-card"><span class="card-label">IOC MATCHES</span><div class="card-value" id="suite-intel-ioc" style="color:#f85149;">0</div><span class="card-sub">Active CTI Matches</span></div>
-                        <div class="summary-card"><span class="card-label">ACTIVE CONNECTIONS</span><div class="card-value" id="suite-intel-conns" style="color:#58a6ff;">0</div><span class="card-sub">System Remote Endpoints</span></div>
-                        <div class="summary-card"><span class="card-label">CISA KEV ENTRIES</span><div class="card-value" id="suite-intel-kev" style="color:#d29922;">0</div><span class="card-sub">Known Exploited CVEs</span></div>
+                        <div class="summary-card"><span class="card-label">LIVE CTI FEED</span><div class="card-value" id="suite-intel-feed">--</div><span class="card-sub" id="intel-feed-status">Tracked IOCs</span></div>
+                        <div class="summary-card"><span class="card-label">IOC MATCHES</span><div class="card-value" id="suite-intel-ioc" style="color:#f85149;">--</div><span class="card-sub">Active CTI Matches</span></div>
+                        <div class="summary-card"><span class="card-label">ACTIVE CONNECTIONS</span><div class="card-value" id="suite-intel-conns">--</div><span class="card-sub">System Remote Endpoints</span></div>
+                        <div class="summary-card"><span class="card-label">CISA KEV ENTRIES</span><div class="card-value" id="suite-intel-kev" style="color:#d29922;">--</div><span class="card-sub">Known Exploited CVEs</span></div>
                     </div>
+
                     <div class="panel-box" style="margin-bottom:16px;">
                         <div class="panel-header-flex">
                             <span>Live Threat Intelligence Sync (Abuse.ch / ThreatFox)</span>
@@ -1149,9 +1241,32 @@ ________________________________________________________________________________
                 </section>
 
             </main>
+        <!-- Analyst Keyboard Shortcuts Modal -->
+        <div id="modal-shortcuts-help" class="modal-overlay">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <span style="font-weight:700;font-size:13px;color:#ffffff;">Analyst Workstation Keyboard Shortcuts</span>
+                    <button id="btn-close-shortcuts" class="btn btn-outline" style="padding:2px 8px;font-size:11px;">✕</button>
+                </div>
+                <div style="padding:18px;display:flex;flex-direction:column;gap:10px;">
+                    <div class="shortcut-row"><kbd class="search-kbd">/</kbd> or <kbd class="search-kbd">Ctrl + K</kbd><span>Focus Global Threat Search Bar</span></div>
+                    <div class="shortcut-row"><kbd class="search-kbd">1</kbd><span>Master Threat Feed (LurkSOC)</span></div>
+                    <div class="shortcut-row"><kbd class="search-kbd">2</kbd><span>Windows Event Log Stream (LurkSIEM)</span></div>
+                    <div class="shortcut-row"><kbd class="search-kbd">3</kbd><span>Windows Process Stream (LurkTrace)</span></div>
+                    <div class="shortcut-row"><kbd class="search-kbd">4</kbd><span>Threat Intelligence (LurkIntel)</span></div>
+                    <div class="shortcut-row"><kbd class="search-kbd">5</kbd><span>WAF Request Inspector (LurkShield)</span></div>
+                    <div class="shortcut-row"><kbd class="search-kbd">6</kbd><span>Deception Honeypots (LurkDecoy)</span></div>
+                    <div class="shortcut-row"><kbd class="search-kbd">7</kbd><span>Secrets & Passwords (LurkIdentity)</span></div>
+                    <div class="shortcut-row"><kbd class="search-kbd">8</kbd><span>Vulnerability Audit (LurkVuln)</span></div>
+                    <div class="shortcut-row"><kbd class="search-kbd">?</kbd><span>Toggle Keyboard Shortcuts Modal</span></div>
+                    <div class="shortcut-row"><kbd class="search-kbd">Esc</kbd><span>Close Open Dropdowns & Modals</span></div>
+                </div>
+            </div>
         </div>
+
     </div>
 
     <script src="js/app.js"></script>
 </body>
 </html>
+

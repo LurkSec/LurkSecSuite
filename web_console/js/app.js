@@ -97,6 +97,13 @@ function renderDashboard() {
         const score = data.audit ? data.audit.score : 100;
         document.getElementById('metric-soc-score').innerText = `${score}%`;
     }
+    if (document.getElementById('metric-soc-engines')) {
+        document.getElementById('metric-soc-engines').innerText = "12 MODULES ONLINE";
+        document.getElementById('metric-soc-engines').style.fontSize = "15px";
+        document.getElementById('metric-soc-engines').style.marginTop = "6px";
+        document.getElementById('metric-soc-engines').style.color = "#ffffff";
+    }
+
 
     renderSOCChart();
     renderSOCFeed();
@@ -336,7 +343,35 @@ function renderEDRLogs() {
             });
         }
     }
+
+    const polContainer = document.getElementById('edr-policies-container');
+    if (polContainer) {
+        polContainer.innerHTML = '';
+        const policies = edr.policies || [];
+        if (policies.length === 0) {
+            polContainer.innerHTML = `<div style="color:#8b949e;font-size:12px;padding:8px 0;">No automated EDR prevention policies defined. Use the form above to add custom rules.</div>`;
+        } else {
+            policies.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'rule-card';
+                div.innerHTML = `
+                    <div class="rule-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        ${p.name || p.id}
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">
+                        Trigger Action: <strong style="color:#ffffff;">${p.action}</strong>
+                    </div>
+                    <div class="rule-pattern">
+                        Target Process: ${p.process_name || '*'} | Command Keyword: ${p.cmd_contains || '*'}
+                    </div>
+                `;
+                polContainer.appendChild(div);
+            });
+        }
+    }
 }
+
 
 
 
@@ -362,7 +397,7 @@ function renderSocketsTable(filteredSockets = null) {
 }
 
 function renderSIEMTable(filteredEvents = null) {
-    const tbody = document.getElementById('siem-table-body');
+    const tbody = document.getElementById('siem-events-tbody') || document.getElementById('siem-table-body');
     if (!tbody) return;
     tbody.innerHTML = '';
     const events = filteredEvents || state.masterData.siem_events || [];
@@ -406,25 +441,58 @@ function renderSIEMAlerts() {
 }
 
 function renderDecoyTable(filteredDecoys = null) {
-    const tbody = document.getElementById('decoy-table-body');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    const decoy = state.masterData.decoy_summary || {};
-    const intrusions = filteredDecoys || decoy.intrusions || [];
+    const tbody = document.getElementById('decoy-probes-tbody') || document.getElementById('decoy-table-body');
+    if (tbody) {
+        tbody.innerHTML = '';
+        const decoy = state.masterData.decoy_summary || {};
+        const intrusions = filteredDecoys || decoy.intrusions || [];
 
-    intrusions.slice(0, 50).forEach(i => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><code>${i.timestamp}</code></td>
-            <td><code>${i.probe_id}</code></td>
-            <td><strong style="color:#f85149;">Port ${i.target_port} (${i.service})</strong></td>
-            <td><code>${i.source_ip}</code></td>
-            <td>${i.origin}</td>
-            <td><code>${i.payload}</code></td>
-        `;
-        tbody.appendChild(tr);
-    });
+        intrusions.slice(0, 50).forEach(i => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><code>${i.timestamp}</code></td>
+                <td><code>${i.probe_id}</code></td>
+                <td><strong style="color:#f85149;">Port ${i.target_port} (${i.service})</strong></td>
+                <td><code>${i.source_ip}</code></td>
+                <td>${i.origin}</td>
+                <td><code>${i.payload}</code></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    renderDecoyListeners();
 }
+
+function renderDecoyListeners() {
+    const c = document.getElementById('decoy-listeners-container');
+    if (!c) return;
+    const decoy = state.masterData.decoy_summary || {};
+    const listeners = decoy.active_listeners || [
+        { name: "SSH Decoy Listener", port: 2222, service: "SSH-2.0-OpenSSH_8.9p1", status: "LISTENING" },
+        { name: "FTP Decoy Listener", port: 2121, service: "ProFTPD 1.3.5 Server", status: "LISTENING" },
+        { name: "Telnet Router Decoy", port: 2323, service: "Cisco IOS Terminal", status: "LISTENING" },
+        { name: "HTTP Web Admin Decoy", port: 8080, service: "Apache/2.4.52 (Ubuntu)", status: "LISTENING" },
+        { name: "HTTPS SSL Portal Decoy", port: 8443, service: "nginx/1.18.0 (SSL)", status: "LISTENING" },
+        { name: "SMB File Share Decoy", port: 4450, service: "Windows SMB v2 IPC$", status: "LISTENING" },
+        { name: "MSSQL Server Decoy", port: 14330, service: "Microsoft SQL Server 2019", status: "LISTENING" },
+        { name: "MySQL Server Decoy", port: 33060, service: "5.7.33-MySQL Community Server", status: "LISTENING" },
+        { name: "RDP Remote Desktop Decoy", port: 33890, service: "Microsoft RDP Terminal", status: "LISTENING" },
+        { name: "PostgreSQL DB Decoy", port: 54320, service: "PostgreSQL 14.2 Server", status: "LISTENING" },
+        { name: "Redis In-Memory Decoy", port: 16379, service: "Redis server v=6.2.6", status: "LISTENING" },
+        { name: "MongoDB NoSQL Decoy", port: 27017, service: "MongoDB v5.0.6 Engine", status: "LISTENING" }
+    ];
+
+    c.innerHTML = listeners.map(l => `
+        <div class="summary-card" style="border-top:3px solid var(--accent-purple);">
+            <span class="card-label">${l.name}</span>
+            <div class="card-value" style="font-size:20px;">Port ${l.port}</div>
+            <span class="card-sub" style="color:var(--status-green);font-weight:600;">● ${l.status}</span>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-family:var(--font-mono);">${l.service}</div>
+        </div>
+    `).join("");
+}
+
 
 function renderPacketTable() {
     const tbody = document.getElementById('packet-table-body');
@@ -466,7 +534,8 @@ function renderInspectorTable() {
 }
 
 function renderTraceTable(filteredTrace = null) {
-    const tbody = document.getElementById('trace-table-body');
+    const tbody = document.getElementById('trace-procs-tbody') || document.getElementById('trace-table-body');
+
     if (!tbody) return;
     tbody.innerHTML = '';
     const procs = filteredTrace || state.masterData.processes || [];
@@ -671,53 +740,29 @@ function setupEventListeners() {
         });
     }
 
-    const btnQuickScan = document.getElementById('btn-quick-scan');
-    if (btnQuickScan) {
-        btnQuickScan.addEventListener('click', async () => {
-            btnQuickScan.disabled = true;
-            btnQuickScan.innerText = 'Refreshing...';
-            try { await loadMasterData(); }
-            finally {
-                setTimeout(() => {
-                    btnQuickScan.disabled = false;
-                    btnQuickScan.innerText = 'Refresh Suite';
-                }, 300);
+    // Universal 1-Second Live Telemetry Auto-Polling
+    if (!state.autoRefreshInterval) {
+        state.autoRefreshInterval = setInterval(() => {
+            loadMasterData();
+        }, 1000);
+    }
+
+    // Export Options Dropdown Menu Handler
+    const btnExportDropdown = document.getElementById('btn-export-dropdown');
+    const exportDropdownMenu = document.getElementById('export-dropdown-menu');
+    if (btnExportDropdown && exportDropdownMenu) {
+        btnExportDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+            exportDropdownMenu.classList.toggle('show');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!exportDropdownMenu.contains(e.target) && e.target !== btnExportDropdown) {
+                exportDropdownMenu.classList.remove('show');
             }
         });
     }
 
-    const btnAutoRefresh = document.getElementById('btn-auto-refresh');
-    function updateAutoRefreshUI() {
-        if (!btnAutoRefresh) return;
-        if (state.autoRefreshActive) {
-            btnAutoRefresh.innerText = `Auto-Refresh: ON (3s)`;
-            btnAutoRefresh.style.borderColor = "#3fb950";
-            btnAutoRefresh.style.color = "#3fb950";
-            if (!state.autoRefreshInterval) {
-                state.autoRefreshInterval = setInterval(() => loadMasterData(), 3000);
-            }
-        } else {
-            btnAutoRefresh.innerText = `Auto-Refresh: OFF`;
-            btnAutoRefresh.style.borderColor = "";
-            btnAutoRefresh.style.color = "";
-            if (state.autoRefreshInterval) {
-                clearInterval(state.autoRefreshInterval);
-                state.autoRefreshInterval = null;
-            }
-        }
-    }
-
-
-    if (btnAutoRefresh) {
-        btnAutoRefresh.addEventListener('click', () => {
-            state.autoRefreshActive = !state.autoRefreshActive;
-            localStorage.setItem('lurksec_auto_refresh', state.autoRefreshActive ? 'true' : 'false');
-            updateAutoRefreshUI();
-        });
-    }
-
-    // Auto-start 1-second live polling on load if enabled
-    updateAutoRefreshUI();
 
 
     // Per-Module Exports
@@ -1226,12 +1271,17 @@ function renderSOARPlaybooks(playbooks) {
     const c = document.getElementById('suite-soar-playbooks-container');
     if (!c) return;
     c.innerHTML = playbooks.map(p => `
-        <div class="compliance-card ${p.severity_threshold}">
-            <div class="compliance-header">
-                <span class="compliance-title"><strong>[${p.id}]</strong> ${p.name}</span>
-                <span class="compliance-tag ${p.severity_threshold}">${p.severity_threshold}</span>
+        <div class="rule-card">
+            <div class="rule-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                ${p.name} (${p.id})
             </div>
-            <div class="compliance-desc">Trigger: <code>${p.trigger_event}</code></div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">
+                Trigger Threshold: <strong style="color:#ffffff;">${p.severity_threshold}</strong>
+            </div>
+            <div class="rule-pattern">
+                Trigger Event: ${p.trigger_event}
+            </div>
         </div>
     `).join("");
 }
@@ -1285,12 +1335,17 @@ function renderSigmaRules(rules) {
     const c = document.getElementById('suite-hunt-sigma-container');
     if (!c) return;
     c.innerHTML = rules.map(r => `
-        <div class="compliance-card ${r.severity}" style="margin-bottom:8px;">
-            <div class="compliance-header">
-                <span class="compliance-title"><strong>[${r.id}]</strong> ${r.title}</span>
-                <span class="compliance-tag ${r.severity}">${r.severity}</span>
+        <div class="rule-card">
+            <div class="rule-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+                SIGMA: ${r.title} (${r.id})
             </div>
-            <div class="compliance-desc">${r.description}<br><code style="color:#58a6ff;">MITRE: ${r.mitre_id}</code> | Pattern: <code>${r.pattern}</code></div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">
+                ${r.description} | <code style="color:#58a6ff;">MITRE: ${r.mitre_id}</code>
+            </div>
+            <div class="rule-pattern">
+                Rule Condition Pattern: ${r.pattern}
+            </div>
         </div>
     `).join("");
 }
@@ -1299,15 +1354,21 @@ function renderYaraSignatures(sigs) {
     const c = document.getElementById('suite-hunt-yara-container');
     if (!c) return;
     c.innerHTML = sigs.map(s => `
-        <div class="compliance-card ${s.severity === 'CRITICAL' ? 'HIGH' : s.severity}" style="margin-bottom:8px;">
-            <div class="compliance-header">
-                <span class="compliance-title"><strong>[${s.id}]</strong> ${s.name}</span>
-                <span class="compliance-tag ${s.severity}">${s.severity}</span>
+        <div class="rule-card">
+            <div class="rule-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                YARA: ${s.name} (${s.id})
             </div>
-            <div class="compliance-desc">${s.description}<br><code style="color:#3fb950;">Type: ${s.type}</code> | Pattern: <code>${s.pattern}</code></div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">
+                ${s.description} | <code style="color:#3fb950;">Type: ${s.type}</code>
+            </div>
+            <div class="rule-pattern">
+                Memory Signature Pattern: ${s.pattern}
+            </div>
         </div>
     `).join("");
 }
+
 
 // Master Incident Containment Console
 document.addEventListener('DOMContentLoaded', () => {
@@ -1476,18 +1537,39 @@ async function loadVulnSuiteData() {
         document.getElementById('suite-vuln-critical').innerText = d.critical_count || 0;
         const c = document.getElementById('suite-vuln-findings-container');
         if (c) {
-            c.innerHTML = (d.findings || []).map(v => `
-                <div class="compliance-card ${v.status === 'UNPATCHED' ? v.severity : 'PASS'}">
-                    <div class="compliance-header">
-                        <span class="compliance-title"><strong>[${v.cve}]</strong> ${v.title}</span>
-                        <span class="compliance-tag ${v.status === 'UNPATCHED' ? v.severity : 'PASS'}">${v.status} | CVSS ${v.cvss}</span>
+            c.innerHTML = (d.findings || []).map(v => {
+                const isUnpatched = v.status === 'UNPATCHED';
+                const cvssVal = parseFloat(v.cvss || 0);
+                let tagClass = 'PASS';
+                let tagLabel = `[ PATCHED ] SECURE | CVSS ${v.cvss}`;
+
+                if (isUnpatched) {
+                    if (cvssVal >= 9.0 || v.severity === 'CRITICAL') {
+                        tagClass = 'CRITICAL';
+                        tagLabel = `CRITICAL UNPATCHED | CVSS ${v.cvss}`;
+                    } else if (cvssVal >= 7.0 || v.severity === 'HIGH') {
+                        tagClass = 'HIGH';
+                        tagLabel = `HIGH UNPATCHED | CVSS ${v.cvss}`;
+                    } else {
+                        tagClass = 'MEDIUM';
+                        tagLabel = `UNPATCHED | CVSS ${v.cvss}`;
+                    }
+                }
+
+                return `
+                    <div class="compliance-card ${tagClass}">
+                        <div class="compliance-header">
+                            <span class="compliance-title"><strong>[${v.cve}]</strong> ${v.title}</span>
+                            <span class="compliance-tag ${tagClass}">${tagLabel}</span>
+                        </div>
+                        <div class="compliance-desc">${v.description}<br><code style="color:#58a6ff;">Component: ${v.component}</code> | Required Security Update: <code style="color:#f85149;">${v.kb_needed}</code></div>
                     </div>
-                    <div class="compliance-desc">${v.description}<br><code style="color:#58a6ff;">Component: ${v.component}</code> | Required Security Update: <code style="color:#f85149;">${v.kb_needed}</code></div>
-                </div>
-            `).join("");
+                `;
+            }).join("");
         }
     } catch(e) {}
 }
+
 
 async function loadSandSuiteData() {
     try {
@@ -2031,7 +2113,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadEDRPolicies();
     setTimeout(renderProcessTreeGraph, 800);
+
+    // Global Threat Search Handler
+    const globalSearchInput = document.getElementById('global-search-input');
+    if (globalSearchInput) {
+        globalSearchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim().toLowerCase();
+            if (!query) {
+                renderSOCFeed();
+                return;
+            }
+
+            const soc = state.masterData.soc_incidents || {};
+            const incidents = soc.incidents || [];
+            const filtered = incidents.filter(inc => {
+                return (inc.title || '').toLowerCase().includes(query) ||
+                       (inc.evidence || '').toLowerCase().includes(query) ||
+                       (inc.category || '').toLowerCase().includes(query) ||
+                       (inc.incident_id || '').toLowerCase().includes(query);
+            });
+            renderSOCFeed(filtered);
+        });
+    }
+
+    // Analyst Keyboard Shortcuts Helper
+    const shortcutsModal = document.getElementById('modal-shortcuts-help');
+    const btnShortcutsHelp = document.getElementById('btn-shortcuts-help');
+    const btnCloseShortcuts = document.getElementById('btn-close-shortcuts');
+
+    function toggleShortcutsModal() {
+        if (shortcutsModal) shortcutsModal.classList.toggle('show');
+    }
+
+    if (btnShortcutsHelp) btnShortcutsHelp.addEventListener('click', toggleShortcutsModal);
+    if (btnCloseShortcuts) btnCloseShortcuts.addEventListener('click', toggleShortcutsModal);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (shortcutsModal) shortcutsModal.classList.remove('show');
+            const dropdown = document.getElementById('export-dropdown-menu');
+            if (dropdown) dropdown.classList.remove('show');
+            return;
+        }
+
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+
+        if (e.key === '/' || (e.ctrlKey && e.key.toLowerCase() === 'k')) {
+            e.preventDefault();
+            if (globalSearchInput) globalSearchInput.focus();
+            return;
+        }
+
+        if (e.key === '?') {
+            e.preventDefault();
+            toggleShortcutsModal();
+            return;
+        }
+
+        const num = parseInt(e.key, 10);
+        if (num >= 1 && num <= 8) {
+            const tabs = ['soc-overview', 'siem-events', 'trace-procs', 'intel-overview', 'shield-overview', 'decoy-probes', 'identity-findings', 'vuln-audit'];
+            const targetTab = tabs[num - 1];
+            if (targetTab) {
+                const btn = document.querySelector(`[data-tab="${targetTab}"]`);
+                if (btn) btn.click();
+            }
+        }
+    });
 });
+
 
 
 

@@ -1,0 +1,11 @@
+# Python cache & bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Temporary environment files & logs
+*.log
+.env
+.idea/
+.vscode/
