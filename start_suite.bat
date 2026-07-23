@@ -1,8 +1,18 @@
 @echo off
 title Master LurkSec Suite Console Launcher
 color 0A
+
+:: Self-elevate script to Administrator if not already elevated
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo Requesting Administrative Privileges...
+    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    exit /b
+)
+cd /d "%~dp0"
+
 echo ===============================================================================
-echo                MASTER LURKSEC SUITE COMMAND LAUNCHER
+echo                MASTER LURKSEC SUITE COMMAND LAUNCHER [ADMIN]
 echo ===============================================================================
 echo Starting Master LurkSec Unified Security Server on Port 8000...
 echo.
