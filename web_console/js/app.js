@@ -2238,28 +2238,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadEDRPolicies();
     setTimeout(renderProcessTreeGraph, 800);
 
-    // Global Threat Search Handler
-    const globalSearchInput = document.getElementById('global-search-input');
-    if (globalSearchInput) {
-        globalSearchInput.addEventListener('input', (e) => {
-            const query = e.target.value.trim().toLowerCase();
-            if (!query) {
-                renderSOCFeed();
-                return;
-            }
-
-            const soc = state.masterData.soc_incidents || {};
-            const incidents = soc.incidents || [];
-            const filtered = incidents.filter(inc => {
-                return (inc.title || '').toLowerCase().includes(query) ||
-                       (inc.evidence || '').toLowerCase().includes(query) ||
-                       (inc.category || '').toLowerCase().includes(query) ||
-                       (inc.incident_id || '').toLowerCase().includes(query);
-            });
-            renderSOCFeed(filtered);
-        });
-    }
-
     // Analyst Keyboard Shortcuts Helper
     const shortcutsModal = document.getElementById('modal-shortcuts-help');
     const btnShortcutsHelp = document.getElementById('btn-shortcuts-help');
@@ -2283,12 +2261,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
         if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
 
-        if (e.key === '/' || (e.ctrlKey && e.key.toLowerCase() === 'k')) {
-            e.preventDefault();
-            if (globalSearchInput) globalSearchInput.focus();
-            return;
-        }
-
         if (e.key === '?') {
             e.preventDefault();
             toggleShortcutsModal();
@@ -2306,6 +2278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
 
 
 

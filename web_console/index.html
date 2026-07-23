@@ -7,7 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <link rel="stylesheet" href="css/style.css?v=20260723_v12">
+    <link rel="stylesheet" href="css/style.css?v=20260723_v13">
+
 
 
 
@@ -37,13 +38,8 @@
                 <span id="sys-ip-display">IP: --</span>
                 <span class="sep">|</span>
                 <span id="sys-os-display">OS: --</span>
-                <span class="sep">|</span>
-                <div class="global-search-wrap">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" id="global-search-input" class="global-search-input" placeholder="Search IP, CVE, Event ID, Process... (Press / or Ctrl+K)">
-                    <kbd class="search-kbd">/</kbd>
-                </div>
             </div>
+
 
             <div class="header-right" style="display:flex;gap:10px;align-items:center;">
                 <button id="btn-shortcuts-help" class="btn btn-outline" title="Analyst Keyboard Shortcuts (?)" style="padding:5px 9px;">
@@ -408,7 +404,7 @@
                                     <option value="quarantine">Quarantine Filepath</option>
                                 </select>
                                 <input type="text" id="soc-action-target" class="filter-input" style="flex:1;" placeholder="Enter Target IP, Process PID, or Executable File Path...">
-                                <button id="btn-soc-execute-action" class="btn btn-primary" style="background:#f85149;border-color:#f85149;display:inline-flex;align-items:center;gap:6px;">
+                                <button id="btn-soc-execute-action" class="btn btn-outline" style="color:#f85149;border-color:rgba(248, 81, 73, 0.4);display:inline-flex;align-items:center;gap:6px;">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                                     Execute Containment
                                 </button>
@@ -447,7 +443,7 @@
                             <div style="padding:16px;">
                                 <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Target Process ID (PID):</label>
                                 <input type="number" id="input-suite-kill-pid" class="filter-input" style="width:100%;margin-bottom:10px;" placeholder="e.g. 4876">
-                                <button id="btn-suite-kill" class="btn btn-primary" style="width:100%;background:#f85149;border-color:#f85149;">Terminate Process Tree</button>
+                                <button id="btn-suite-kill" class="btn btn-outline" style="width:100%;color:#f85149;border-color:rgba(248, 81, 73, 0.4);">Terminate Process Tree</button>
                             </div>
                         </div>
 
@@ -457,7 +453,7 @@
                             <div style="padding:16px;">
                                 <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Remote Target IP Address:</label>
                                 <input type="text" id="input-suite-block-ip" class="filter-input" style="width:100%;margin-bottom:10px;" placeholder="e.g. 185.220.101.5">
-                                <button id="btn-suite-block" class="btn btn-primary" style="width:100%;background:#d29922;border-color:#d29922;">Block IP in Windows Firewall</button>
+                                <button id="btn-suite-block" class="btn btn-outline" style="width:100%;color:#d29922;border-color:rgba(210, 153, 34, 0.4);">Block IP in Windows Firewall</button>
                             </div>
                         </div>
 
@@ -467,9 +463,10 @@
                             <div style="padding:16px;">
                                 <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Full File Path:</label>
                                 <input type="text" id="input-suite-quarantine-path" class="filter-input" style="width:100%;margin-bottom:10px;" placeholder="e.g. C:\Users\Public\malware.exe">
-                                <button id="btn-suite-quarantine" class="btn btn-primary" style="width:100%;">Quarantine File to Vault</button>
+                                <button id="btn-suite-quarantine" class="btn btn-outline" style="width:100%;color:#3fb950;border-color:rgba(63, 185, 80, 0.4);">Quarantine File to Vault</button>
                             </div>
                         </div>
+
 
                         <!-- Action 4: Memory Carver -->
                         <div class="panel-box">
