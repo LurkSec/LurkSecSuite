@@ -907,7 +907,7 @@ code {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 0;
+    padding: 8px 0;
     border-bottom: 1px solid var(--panel-border-subtle);
     font-size: 12px;
 }
@@ -915,6 +915,19 @@ code {
 .shortcut-row span {
     color: var(--text-primary);
 }
+
+.modal-kbd {
+    background: #21262d;
+    border: 1px solid var(--panel-border);
+    color: var(--accent-blue);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
 
 /* ═══════════════════════════════════════════════════════
    EXECUTIVE PDF-READY PRINT LAYOUT (@media print)

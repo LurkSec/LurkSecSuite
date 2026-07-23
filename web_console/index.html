@@ -7,7 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <link rel="stylesheet" href="css/style.css?v=20260723_v11">
+    <link rel="stylesheet" href="css/style.css?v=20260723_v12">
+
 
 
 
@@ -1240,6 +1241,34 @@ ________________________________________________________________________________
                     </div>
                 </section>
 
+                <section id="tab-cloud-aws" class="tab-page">
+                    <div class="section-title"><h2>LurkCloud - AWS Security Audit</h2><span class="section-subtitle">AWS S3 public access, IAM root key audit, and Security Group 0.0.0.0/0 ingress compliance</span></div>
+                    <div class="summary-grid">
+                        <div class="summary-card"><span class="card-label">S3 BUCKETS</span><div class="card-value" id="aws-s3-count">--</div><span class="card-sub">Audited Storage Buckets</span></div>
+                        <div class="summary-card"><span class="card-label">PUBLIC ACL EXPOSURES</span><div class="card-value" id="aws-public-acls" style="color:#f85149;">--</div><span class="card-sub">Critical Storage Findings</span></div>
+                        <div class="summary-card"><span class="card-label">OPEN SECURITY GROUPS</span><div class="card-value" id="aws-open-sg" style="color:#d29922;">--</div><span class="card-sub">0.0.0.0/0 Ingress Rules</span></div>
+                        <div class="summary-card"><span class="card-label">AWS COMPLIANCE</span><div class="card-value" id="aws-compliance-score">--</div><span class="card-sub">CIS AWS Benchmark Baseline</span></div>
+                    </div>
+                    <div class="panel-box">
+                        <div class="panel-header-flex"><span>AWS Security Findings & CIS Compliance Violations</span></div>
+                        <div id="aws-findings-container" class="compliance-list" style="padding:12px;"></div>
+                    </div>
+                </section>
+
+                <section id="tab-cloud-azure" class="tab-page">
+                    <div class="section-title"><h2>LurkCloud - Azure Security Audit</h2><span class="section-subtitle">Azure Storage Account public blob access, Key Vault logging, and NSG rule compliance</span></div>
+                    <div class="summary-grid">
+                        <div class="summary-card"><span class="card-label">STORAGE ACCOUNTS</span><div class="card-value" id="azure-storage-count">--</div><span class="card-sub">Audited Azure Accounts</span></div>
+                        <div class="summary-card"><span class="card-label">PUBLIC BLOB ACCESS</span><div class="card-value" id="azure-public-blobs" style="color:#f85149;">--</div><span class="card-sub">Exposed Storage Blobs</span></div>
+                        <div class="summary-card"><span class="card-label">NSG EXPOSURES</span><div class="card-value" id="azure-open-nsg" style="color:#d29922;">--</div><span class="card-sub">Open Management Ports</span></div>
+                        <div class="summary-card"><span class="card-label">AZURE COMPLIANCE</span><div class="card-value" id="azure-compliance-score">--</div><span class="card-sub">CIS Azure Security Score</span></div>
+                    </div>
+                    <div class="panel-box">
+                        <div class="panel-header-flex"><span>Azure Security Findings & Policy Audits</span></div>
+                        <div id="azure-findings-container" class="compliance-list" style="padding:12px;"></div>
+                    </div>
+                </section>
+
             </main>
         <!-- Analyst Keyboard Shortcuts Modal -->
         <div id="modal-shortcuts-help" class="modal-overlay">
@@ -1249,20 +1278,21 @@ ________________________________________________________________________________
                     <button id="btn-close-shortcuts" class="btn btn-outline" style="padding:2px 8px;font-size:11px;">✕</button>
                 </div>
                 <div style="padding:18px;display:flex;flex-direction:column;gap:10px;">
-                    <div class="shortcut-row"><kbd class="search-kbd">/</kbd> or <kbd class="search-kbd">Ctrl + K</kbd><span>Focus Global Threat Search Bar</span></div>
-                    <div class="shortcut-row"><kbd class="search-kbd">1</kbd><span>Master Threat Feed (LurkSOC)</span></div>
-                    <div class="shortcut-row"><kbd class="search-kbd">2</kbd><span>Windows Event Log Stream (LurkSIEM)</span></div>
-                    <div class="shortcut-row"><kbd class="search-kbd">3</kbd><span>Windows Process Stream (LurkTrace)</span></div>
-                    <div class="shortcut-row"><kbd class="search-kbd">4</kbd><span>Threat Intelligence (LurkIntel)</span></div>
-                    <div class="shortcut-row"><kbd class="search-kbd">5</kbd><span>WAF Request Inspector (LurkShield)</span></div>
-                    <div class="shortcut-row"><kbd class="search-kbd">6</kbd><span>Deception Honeypots (LurkDecoy)</span></div>
-                    <div class="shortcut-row"><kbd class="search-kbd">7</kbd><span>Secrets & Passwords (LurkIdentity)</span></div>
-                    <div class="shortcut-row"><kbd class="search-kbd">8</kbd><span>Vulnerability Audit (LurkVuln)</span></div>
-                    <div class="shortcut-row"><kbd class="search-kbd">?</kbd><span>Toggle Keyboard Shortcuts Modal</span></div>
-                    <div class="shortcut-row"><kbd class="search-kbd">Esc</kbd><span>Close Open Dropdowns & Modals</span></div>
+                    <div class="shortcut-row"><span>Focus Global Threat Search Bar</span><div><kbd class="modal-kbd">/</kbd> <span style="font-size:11px;color:var(--text-muted);">or</span> <kbd class="modal-kbd">Ctrl + K</kbd></div></div>
+                    <div class="shortcut-row"><span>Master Threat Feed (LurkSOC)</span><kbd class="modal-kbd">1</kbd></div>
+                    <div class="shortcut-row"><span>Windows Event Log Stream (LurkSIEM)</span><kbd class="modal-kbd">2</kbd></div>
+                    <div class="shortcut-row"><span>Windows Process Stream (LurkTrace)</span><kbd class="modal-kbd">3</kbd></div>
+                    <div class="shortcut-row"><span>Threat Intelligence (LurkIntel)</span><kbd class="modal-kbd">4</kbd></div>
+                    <div class="shortcut-row"><span>WAF Request Inspector (LurkShield)</span><kbd class="modal-kbd">5</kbd></div>
+                    <div class="shortcut-row"><span>Deception Honeypots (LurkDecoy)</span><kbd class="modal-kbd">6</kbd></div>
+                    <div class="shortcut-row"><span>Secrets & Passwords (LurkIdentity)</span><kbd class="modal-kbd">7</kbd></div>
+                    <div class="shortcut-row"><span>Vulnerability Audit (LurkVuln)</span><kbd class="modal-kbd">8</kbd></div>
+                    <div class="shortcut-row"><span>Toggle Keyboard Shortcuts Modal</span><kbd class="modal-kbd">?</kbd></div>
+                    <div class="shortcut-row"><span>Close Open Dropdowns & Modals</span><kbd class="modal-kbd">Esc</kbd></div>
                 </div>
             </div>
         </div>
+
 
     </div>
 
