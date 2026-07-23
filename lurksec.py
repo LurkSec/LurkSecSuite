@@ -68,6 +68,8 @@ GUARD_ENGINE = ITDRAuditor()
 POLICY_ENGINE = EDRPolicyEngine()
 THREAT_FEED = ThreatFeedManager()
 HUNT_HITS = []
+RESOLVED_INCIDENTS = set()
+
 
 
 
@@ -500,8 +502,10 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
         soc_incidents = SOCAggregator.aggregate_incidents(
             sockets, siem_alerts, decoy_summary, packet_alerts, process_alerts, audit_summary,
             edr_logs=EDR_ACTION_LOGS, waf_logs=WAF_BLOCK_LOG, soar_cases=SOAR_CASES.get_cases(), hunt_hits=HUNT_HITS,
-            dns_summary=dns_sum, zero_summary=zero_sum, vuln_summary=vuln_sum, sand_summary=sand_sum, guard_summary=guard_sum
+            dns_summary=dns_sum, zero_summary=zero_sum, vuln_summary=vuln_sum, sand_summary=sand_sum, guard_summary=guard_sum,
+            resolved_incidents=list(RESOLVED_INCIDENTS)
         )
+
 
         return {
             "host_info": host_info,
@@ -594,7 +598,22 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 status = body.get("status")
                 note = body.get("note")
                 assigned = body.get("assigned")
-                self.send_json(SOAR_CASES.update_case(c_id, status=status, note=note, assigned_to=assigned))
+                res = SOAR_CASES.update_case(c_id, status=status, note=note, assigned_to=assigned)
+                if status and status.upper() in ["RESOLVED", "CLOSED"]:
+                    case = next((c for c in SOAR_CASES.get_cases() if c["case_id"] == c_id), None)
+                    if case and case.get("title"):
+                        RESOLVED_INCIDENTS.add(case["title"].lower())
+                self.send_json(res)
+
+            elif path == "/api/soc/incident/resolve":
+                inc_id = body.get("id", "")
+                title = body.get("title", "")
+                if inc_id:
+                    RESOLVED_INCIDENTS.add(inc_id)
+                if title:
+                    RESOLVED_INCIDENTS.add(title.lower())
+                self.send_json({"success": True, "message": f"Incident {inc_id or title} resolved and removed from feed."})
+
 
             elif path == "/api/soar/run":
                 p_id = body.get("id", "PB-001")

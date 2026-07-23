@@ -23,8 +23,10 @@ class SOCAggregator:
         zero_summary: Dict[str, Any] = None,
         vuln_summary: Dict[str, Any] = None,
         sand_summary: Dict[str, Any] = None,
-        guard_summary: Dict[str, Any] = None
+        guard_summary: Dict[str, Any] = None,
+        resolved_incidents: List[str] = None
     ) -> Dict[str, Any]:
+
         incidents = []
         now_str = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -190,9 +192,38 @@ class SOCAggregator:
                     "evidence": f"URI: {wf.get('uri')}"
                 })
 
-        # Default PASS card if zero incidents
-        if not incidents:
-            incidents.append({
+        resolved_case_titles = set()
+        resolved_case_evidence = set()
+
+        if soar_cases:
+            for case in soar_cases:
+                if case.get("status") in ["RESOLVED", "CLOSED"]:
+                    if case.get("title"):
+                        resolved_case_titles.add(case["title"].lower())
+                    if case.get("description"):
+                        resolved_case_evidence.add(case["description"].lower())
+
+        resolved_ids = set(resolved_incidents) if resolved_incidents else set()
+
+        active_incidents = []
+        for inc in incidents:
+            inc_id = inc.get("incident_id", "")
+            title = inc.get("title", "").lower()
+            evidence = inc.get("evidence", "").lower()
+
+            if inc_id in resolved_ids:
+                continue
+
+            if title in resolved_case_titles or any(rt in title for rt in resolved_case_titles if len(rt) > 5):
+                continue
+
+            if evidence in resolved_case_evidence or any(re in evidence for re in resolved_case_evidence if len(re) > 5):
+                continue
+
+            active_incidents.append(inc)
+
+        if not active_incidents:
+            active_incidents.append({
                 "incident_id": "INC-PASS-001",
                 "timestamp": now_str,
                 "engine": "LurkSOC Command",
@@ -203,12 +234,13 @@ class SOCAggregator:
                 "evidence": "Zero high-risk security threats detected across all 18 engines."
             })
 
-        high_count = sum(1 for i in incidents if i["severity"] in ["HIGH", "CRITICAL"])
-        med_count = sum(1 for i in incidents if i["severity"] == "MEDIUM")
-        low_count = sum(1 for i in incidents if i["severity"] in ["LOW", "PASS"])
+        high_count = sum(1 for i in active_incidents if i["severity"] in ["HIGH", "CRITICAL"])
+        med_count = sum(1 for i in active_incidents if i["severity"] == "MEDIUM")
+        low_count = sum(1 for i in active_incidents if i["severity"] in ["LOW", "PASS"])
 
         return {
-            "total_incidents": len(incidents),
+            "total_incidents": len(active_incidents),
             "severity_counts": {"HIGH": high_count, "MEDIUM": med_count, "LOW": low_count},
-            "incidents": incidents
+            "incidents": active_incidents
         }
+

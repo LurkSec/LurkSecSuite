@@ -204,9 +204,9 @@ function renderSOCFeed(filteredIncidents = null) {
         }
 
         actions.push(`
-            <button class="btn btn-outline btn-quick-soar" data-title="${encodeURIComponent(inc.title)}" data-desc="${encodeURIComponent(inc.evidence)}" data-sev="${inc.severity}" style="font-size:10px;color:#58a6ff;border-color:#58a6ff;display:inline-flex;align-items:center;gap:4px;">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                Spawn SOAR Case
+            <button class="btn btn-outline btn-quick-resolve" data-id="${inc.incident_id}" data-title="${encodeURIComponent(inc.title)}" style="font-size:10px;color:#3fb950;border-color:#3fb950;display:inline-flex;align-items:center;gap:4px;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Resolve Threat
             </button>
         `);
 
@@ -269,7 +269,28 @@ function renderSOCFeed(filteredIncidents = null) {
             }
         });
     });
+
+    // Attach click handlers for Incident Resolution
+    container.querySelectorAll('.btn-quick-resolve').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const target = e.target.closest('button');
+            const id = target.getAttribute('data-id');
+            const title = decodeURIComponent(target.getAttribute('data-title'));
+            target.innerText = `Resolving...`;
+            try {
+                await fetch('/api/soc/incident/resolve', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ id, title })
+                });
+                loadMasterData();
+            } catch (err) {
+                target.innerText = `Resolve Failed`;
+            }
+        });
+    });
 }
+
 
 function renderEDRLogs() {
     const logsTbody = document.getElementById('suite-edr-logs-tbody');
@@ -1652,9 +1673,10 @@ async function updateCaseStatus(caseId) {
         });
         const d = await r.json();
         if (res) { res.style.color = d.success ? '#3fb950' : '#f85149'; res.textContent = d.success ? `✓ Status updated to ${status}` : d.message; }
-        setTimeout(loadSOARData, 400);
+        setTimeout(() => { loadSOARData(); loadMasterData(); }, 400);
     } catch(e) { if (res) { res.style.color='#f85149'; res.textContent = `Error: ${e.message}`; } }
 }
+
 
 async function addCaseNote(caseId) {
     const inp = document.getElementById(`case-note-${caseId}`);
