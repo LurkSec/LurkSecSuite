@@ -158,6 +158,25 @@ class AWSInspector:
         iam = AWSInspector.get_iam_findings()
         findings = s3 + sg + iam
 
+        if not cli:
+            findings = [{
+                "timestamp": now, "resource_type": "AWS CLI Runtime", "resource_id": "System PATH / AppData",
+                "severity": "INFO", "status": "WARN",
+                "finding": "AWS CLI binary ('aws') is not installed or not present in system PATH.",
+                "recommendation": "Install AWS CLI v2 via https://aws.amazon.com/cli/ or add aws.exe to PATH"
+            }]
+            res = {
+                "cli_installed": False,
+                "buckets_count": 0,
+                "public_acls": 0,
+                "open_sg": 0,
+                "compliance_score": 0,
+                "findings": findings
+            }
+            AWS_CACHE["timestamp"] = now_time
+            AWS_CACHE["data"] = res
+            return res
+
         creds = os.path.expanduser("~\\.aws\\credentials")
 
         if not findings:
@@ -165,23 +184,23 @@ class AWSInspector:
                 findings.append({
                     "timestamp": now, "resource_type": "AWS IAM / Profile", "resource_id": "AWS Profile Default",
                     "severity": "PASS", "status": "PASS",
-                    "finding": "AWS credentials configured locally. CLI session active.",
-                    "recommendation": "Maintain MFA enforcement across all IAM roles."
+                    "finding": "AWS credentials configured locally (~/.aws/credentials). CLI session initialized.",
+                    "recommendation": "Enforce MFA and least-privilege IAM policies."
                 })
             else:
                 findings.append({
                     "timestamp": now, "resource_type": "AWS CLI Configuration", "resource_id": "Local Workstation",
                     "severity": "MEDIUM", "status": "WARN",
-                    "finding": "AWS CLI credentials file (~/.aws/credentials) not configured",
-                    "recommendation": "Execute 'aws configure' to authenticate AWS environment"
+                    "finding": "AWS CLI installed, but credentials file (~/.aws/credentials) is missing.",
+                    "recommendation": "Run 'aws configure' in terminal to authenticate your AWS environment."
                 })
 
         res = {
-            "cli_installed": cli,
-            "buckets_count": len(s3) or 1,
+            "cli_installed": True,
+            "buckets_count": len(s3),
             "public_acls": sum(1 for f in s3 if f.get("severity") == "HIGH"),
             "open_sg": sum(1 for f in sg if f.get("severity") == "HIGH"),
-            "compliance_score": 100 if all(f.get("status") == "PASS" for f in findings) else 75,
+            "compliance_score": 100 if all(f.get("status") == "PASS" for f in findings) else (75 if os.path.isfile(creds) else 50),
             "findings": findings
         }
         AWS_CACHE["timestamp"] = now_time
@@ -250,6 +269,26 @@ class AzureInspector:
 
         now = time.strftime("%Y-%m-%d %H:%M:%S")
         cli = AzureInspector.check_cli_available()
+
+        if not cli:
+            findings = [{
+                "timestamp": now, "resource_type": "Azure CLI Runtime", "resource_id": "System PATH / AppData",
+                "severity": "INFO", "status": "WARN",
+                "finding": "Azure CLI binary ('az') is not installed on this workstation.",
+                "recommendation": "Install Azure CLI via https://learn.microsoft.com/en-us/cli/azure/install-azure-cli"
+            }]
+            res = {
+                "cli_installed": False,
+                "storage_count": 0,
+                "public_blobs": 0,
+                "open_nsg": 0,
+                "compliance_score": 0,
+                "findings": findings
+            }
+            AZURE_CACHE["timestamp"] = now_time
+            AZURE_CACHE["data"] = res
+            return res
+
         nsg = AzureInspector.get_nsg_findings()
         stg = AzureInspector.get_storage_findings()
         findings = nsg + stg
@@ -261,28 +300,29 @@ class AzureInspector:
                 findings.append({
                     "timestamp": now, "resource_type": "Azure Entra ID Profile", "resource_id": "Azure Subscription Default",
                     "severity": "PASS", "status": "PASS",
-                    "finding": "Azure CLI profile authenticated. Entra ID MFA active.",
+                    "finding": "Azure CLI profile authenticated (~/.azure/azureProfile.json). CLI session initialized.",
                     "recommendation": "Enforce Privileged Identity Management (PIM) for Azure admins."
                 })
             else:
                 findings.append({
                     "timestamp": now, "resource_type": "Azure CLI Configuration", "resource_id": "Local Workstation",
                     "severity": "MEDIUM", "status": "WARN",
-                    "finding": "Azure CLI profile (~/.azure/azureProfile.json) not authenticated",
-                    "recommendation": "Execute 'az login' to authenticate Azure subscription"
+                    "finding": "Azure CLI installed, but profile (~/.azure/azureProfile.json) is not authenticated.",
+                    "recommendation": "Run 'az login' in PowerShell to authenticate your Azure subscription."
                 })
 
         res = {
-            "cli_installed": cli,
-            "storage_count": len(stg) or 1,
+            "cli_installed": True,
+            "storage_count": len(stg),
             "public_blobs": sum(1 for f in stg if f.get("severity") == "HIGH"),
             "open_nsg": sum(1 for f in nsg if f.get("severity") == "HIGH"),
-            "compliance_score": 100 if all(f.get("status") == "PASS" for f in findings) else 80,
+            "compliance_score": 100 if all(f.get("status") == "PASS" for f in findings) else (80 if os.path.isfile(az_profile) else 50),
             "findings": findings
         }
         AZURE_CACHE["timestamp"] = now_time
         AZURE_CACHE["data"] = res
         return res
+
 
 
 

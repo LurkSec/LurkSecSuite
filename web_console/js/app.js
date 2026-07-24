@@ -71,7 +71,11 @@ async function loadMasterData() {
         if (res.ok) {
             state.masterData = await res.json();
             renderDashboard();
+            loadCloudOverviewData();
+            renderAWSCloudData();
+            renderAzureCloudData();
         }
+
     } catch (e) {
         console.warn("Master API Error:", e);
     }
