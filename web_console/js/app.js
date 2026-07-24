@@ -2234,10 +2234,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (shortcutsModal) shortcutsModal.classList.remove('show');
+            const sysModal = document.getElementById('modal-sys-info');
+            if (sysModal) sysModal.classList.remove('show');
             const dropdown = document.getElementById('export-dropdown-menu');
             if (dropdown) dropdown.classList.remove('show');
             return;
         }
+
+
 
         const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
         if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
@@ -2345,18 +2349,21 @@ async function loadFirewallRules() {
     } catch(e) {}
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('click', (e) => {
     const sysModal = document.getElementById('modal-sys-info');
-    const btnSysOs = document.getElementById('sys-os-display');
-    const btnCloseSys = document.getElementById('btn-close-sys-info');
+    if (!sysModal) return;
 
-    function toggleSysInfoModal() {
-        if (sysModal) sysModal.classList.toggle('show');
+    if (e.target && (e.target.id === 'sys-os-display' || e.target.closest('#sys-os-display'))) {
+        e.preventDefault();
+        sysModal.classList.add('show');
+    } else if (e.target && (e.target.id === 'btn-close-sys-info' || e.target.closest('#btn-close-sys-info'))) {
+        e.preventDefault();
+        sysModal.classList.remove('show');
+    } else if (e.target === sysModal) {
+        sysModal.classList.remove('show');
     }
-
-    if (btnSysOs) btnSysOs.addEventListener('click', toggleSysInfoModal);
-    if (btnCloseSys) btnCloseSys.addEventListener('click', toggleSysInfoModal);
 });
+
 
 
 
