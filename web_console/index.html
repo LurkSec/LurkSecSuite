@@ -7,7 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <link rel="stylesheet" href="css/style.css?v=20260724_v1">
+    <link rel="stylesheet" href="css/style.css?v=20260724_v2">
+
 
 
 
@@ -439,42 +440,49 @@
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
                         <!-- Action 1: Kill Process -->
-                        <div class="panel-box">
+                        <div class="panel-box" style="display:flex;flex-direction:column;justify-content:space-between;">
                             <div class="panel-header">Process Tree Termination</div>
-                            <div style="padding:16px;">
-                                <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Target Process ID (PID):</label>
-                                <input type="number" id="input-suite-kill-pid" class="filter-input" style="width:100%;margin-bottom:10px;" placeholder="e.g. 4876">
+                            <div style="padding:16px;display:flex;flex-direction:column;justify-content:space-between;flex:1;">
+                                <div>
+                                    <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Target Process ID (PID):</label>
+                                    <input type="number" id="input-suite-kill-pid" class="filter-input" style="width:100%;margin-bottom:12px;box-sizing:border-box;" placeholder="e.g. 4876">
+                                </div>
                                 <button id="btn-suite-kill" class="btn btn-outline" style="width:100%;color:#f85149;border-color:rgba(248, 81, 73, 0.4);">Terminate Process Tree</button>
                             </div>
                         </div>
 
                         <!-- Action 2: Firewall Block IP -->
-                        <div class="panel-box">
+                        <div class="panel-box" style="display:flex;flex-direction:column;justify-content:space-between;">
                             <div class="panel-header">Windows Firewall IP Containment</div>
-                            <div style="padding:16px;">
-                                <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Remote Target IP Address:</label>
-                                <input type="text" id="input-suite-block-ip" class="filter-input" style="width:100%;margin-bottom:10px;" placeholder="e.g. 185.220.101.5">
+                            <div style="padding:16px;display:flex;flex-direction:column;justify-content:space-between;flex:1;">
+                                <div>
+                                    <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Remote Target IP Address:</label>
+                                    <input type="text" id="input-suite-block-ip" class="filter-input" style="width:100%;margin-bottom:12px;box-sizing:border-box;" placeholder="e.g. 185.220.101.5">
+                                </div>
                                 <button id="btn-suite-block" class="btn btn-outline" style="width:100%;color:#d29922;border-color:rgba(210, 153, 34, 0.4);">Block IP in Windows Firewall</button>
                             </div>
                         </div>
 
                         <!-- Action 3: Quarantine File -->
-                        <div class="panel-box">
+                        <div class="panel-box" style="display:flex;flex-direction:column;justify-content:space-between;">
                             <div class="panel-header">Binary File Quarantine Vault</div>
-                            <div style="padding:16px;">
-                                <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Full File Path:</label>
-                                <input type="text" id="input-suite-quarantine-path" class="filter-input" style="width:100%;margin-bottom:10px;" placeholder="e.g. C:\Users\Public\malware.exe">
+                            <div style="padding:16px;display:flex;flex-direction:column;justify-content:space-between;flex:1;">
+                                <div>
+                                    <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Full File Path:</label>
+                                    <input type="text" id="input-suite-quarantine-path" class="filter-input" style="width:100%;margin-bottom:12px;box-sizing:border-box;" placeholder="e.g. C:\Users\Public\malware.exe">
+                                </div>
                                 <button id="btn-suite-quarantine" class="btn btn-outline" style="width:100%;color:#3fb950;border-color:rgba(63, 185, 80, 0.4);">Quarantine File to Vault</button>
                             </div>
                         </div>
 
-
                         <!-- Action 4: Memory Carver -->
-                        <div class="panel-box">
+                        <div class="panel-box" style="display:flex;flex-direction:column;justify-content:space-between;">
                             <div class="panel-header">Process Memory & String Artifact Carver</div>
-                            <div style="padding:16px;">
-                                <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Target Process ID (PID):</label>
-                                <input type="number" id="input-suite-carve-pid" class="filter-input" style="width:100%;margin-bottom:10px;" placeholder="e.g. 1240">
+                            <div style="padding:16px;display:flex;flex-direction:column;justify-content:space-between;flex:1;">
+                                <div>
+                                    <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Target Process ID (PID):</label>
+                                    <input type="number" id="input-suite-carve-pid" class="filter-input" style="width:100%;margin-bottom:12px;box-sizing:border-box;" placeholder="e.g. 1240">
+                                </div>
                                 <button id="btn-suite-carve" class="btn btn-outline" style="width:100%;">Carve Process IOC Strings</button>
                             </div>
                         </div>
@@ -518,13 +526,15 @@
                             </div>
                         </div>
                         <div id="edr-policies-container" style="padding:16px;display:flex;flex-direction:column;gap:12px;"></div>
+                    </div>
+
                     <!-- AUTOMATED WINDOWS DEFENDER & FIREWALL RULE MANAGER -->
                     <div class="panel-box" style="margin-top:20px;">
                         <div class="panel-header-flex">
                             <span>Automated Windows Defender & Firewall Rule Manager</span>
                             <span style="font-family:var(--font-mono);font-size:11px;color:var(--accent-blue);">ACTIVE DEFENDER INTEGRATION</span>
                         </div>
-                        <div style="padding:16px;">
+                        <div style="padding:16px;overflow-x:auto;">
                             <table class="raw-table">
                                 <thead>
                                     <tr>
@@ -542,6 +552,7 @@
                     </div>
 
                 </section>
+
 
                 <!-- PAGE 3: LURKEDR LOGS & VAULT -->
                 <section id="tab-edr-logs" class="tab-page">

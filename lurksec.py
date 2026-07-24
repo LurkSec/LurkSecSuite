@@ -403,11 +403,14 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 fn = params.get("filename", [""])[0]
                 self.send_json(FileQuarantiner.restore_file(fn))
 
-            elif path == "/api/edr/quarantine/delete":
-                fn = params.get("filename", [""])[0]
-                self.send_json(FileQuarantiner.delete_file(fn))
+            elif path == "/api/cloud/aws":
+                self.send_json(AWSInspector.get_summary())
+
+            elif path == "/api/cloud/azure":
+                self.send_json(AzureInspector.get_summary())
 
             elif path == "/api/report/json":
+
 
                 summary = self.get_master_summary()
                 rep = MasterReportGenerator(summary)

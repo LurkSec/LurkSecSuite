@@ -1642,125 +1642,66 @@ async function loadGuardSuiteData() {
     } catch(e) {}
 }
 
-function renderAWSCloudData() {
+async function renderAWSCloudData() {
     const s3Count = document.getElementById('aws-s3-count');
     const pubAcls = document.getElementById('aws-public-acls');
     const openSg = document.getElementById('aws-open-sg');
     const score = document.getElementById('aws-compliance-score');
     const container = document.getElementById('aws-findings-container');
 
-    if (s3Count) s3Count.innerText = "14 Buckets";
-    if (pubAcls) pubAcls.innerText = "2 Public ACLs";
-    if (openSg) openSg.innerText = "3 Open (0.0.0.0/0)";
-    if (score) score.innerText = "72%";
+    try {
+        const res = await fetch('/api/cloud/aws');
+        const d = await res.json();
 
-    if (container) {
-        const awsFindings = [
-            {
-                id: "AWS-S3-001",
-                title: "S3 Bucket Public Access Control List (ACL) Enabled",
-                severity: "HIGH",
-                resource: "s3://prod-logs-backup-2026",
-                recommendation: "Enable S3 Block Public Access baseline and remove AllUsers grant.",
-                kb: "AWS CIS 2.1.4"
-            },
-            {
-                id: "AWS-IAM-002",
-                title: "AWS Root Account Active Access Keys Detected",
-                severity: "HIGH",
-                resource: "arn:aws:iam::123456789012:root",
-                recommendation: "Delete root account API access keys and enforce Hardware MFA.",
-                kb: "AWS CIS 1.4.0"
-            },
-            {
-                id: "AWS-EC2-003",
-                title: "Security Group Open Inbound Management Ports (0.0.0.0/0)",
-                severity: "MEDIUM",
-                resource: "sg-0fe2198a9bc71a (Port 22 SSH / Port 3389 RDP)",
-                recommendation: "Restrict Security Group ingress rule to trusted Corporate VPN CIDR.",
-                kb: "AWS CIS 5.2"
-            },
-            {
-                id: "AWS-LOG-004",
-                title: "AWS CloudTrail Multi-Region Logging Active",
-                severity: "PASS",
-                resource: "arn:aws:cloudtrail:us-east-1:123456789012:trail/master-audit",
-                recommendation: "Maintain global CloudTrail event logging with KMS encryption.",
-                kb: "AWS CIS 3.1"
-            }
-        ];
+        if (s3Count) s3Count.innerText = `${d.buckets_count || 0} Buckets`;
+        if (pubAcls) pubAcls.innerText = `${d.public_acls || 0} Public ACLs`;
+        if (openSg) openSg.innerText = `${d.open_sg || 0} Open (0.0.0.0/0)`;
+        if (score) score.innerText = `${d.compliance_score || 100}%`;
 
-        container.innerHTML = awsFindings.map(f => `
-            <div class="compliance-card ${f.severity}">
-                <div class="compliance-header">
-                    <span class="compliance-title"><strong>[${f.id}]</strong> ${f.title}</span>
-                    <span class="compliance-tag ${f.severity}">${f.severity}</span>
+        if (container && d.findings) {
+            container.innerHTML = d.findings.map((f, idx) => `
+                <div class="compliance-card ${f.severity}">
+                    <div class="compliance-header">
+                        <span class="compliance-title"><strong>[AWS-${idx + 101}]</strong> ${f.finding}</span>
+                        <span class="compliance-tag ${f.severity}">${f.severity}</span>
+                    </div>
+                    <div class="compliance-desc">Resource: <code style="color:#58a6ff;">${f.resource_id} (${f.resource_type})</code><br>Recommendation: ${f.recommendation}</div>
                 </div>
-                <div class="compliance-desc">Resource: <code style="color:#58a6ff;">${f.resource}</code> | Remediation KB: <code style="color:#3fb950;">${f.kb}</code><br>${f.recommendation}</div>
-            </div>
-        `).join("");
-    }
+            `).join("");
+        }
+    } catch(e) {}
 }
 
-function renderAzureCloudData() {
+async function renderAzureCloudData() {
     const stgCount = document.getElementById('azure-storage-count');
     const pubBlobs = document.getElementById('azure-public-blobs');
     const openNsg = document.getElementById('azure-open-nsg');
     const score = document.getElementById('azure-compliance-score');
     const container = document.getElementById('azure-findings-container');
 
-    if (stgCount) stgCount.innerText = "8 Accounts";
-    if (pubBlobs) pubBlobs.innerText = "1 Public Blob";
-    if (openNsg) openNsg.innerText = "2 NSG Ingress Rules";
-    if (score) score.innerText = "78%";
+    try {
+        const res = await fetch('/api/cloud/azure');
+        const d = await res.json();
 
-    if (container) {
-        const azureFindings = [
-            {
-                id: "AZURE-STG-001",
-                title: "Storage Account Anonymous Public Blob Access Enabled",
-                severity: "HIGH",
-                resource: "/subscriptions/sub-123/resourceGroups/rg-prod/providers/Microsoft.Storage/storageAccounts/stgprodlogs01",
-                recommendation: "Set 'allowBlobPublicAccess' to false across all storage accounts.",
-                kb: "Azure CIS 3.1"
-            },
-            {
-                id: "AZURE-NSG-002",
-                title: "Network Security Group Open Inbound SSH Rule",
-                severity: "HIGH",
-                resource: "nsg-prod-subnet (Rule: AllowAnyCustomSSHInbound)",
-                recommendation: "Restrict NSG rule destination port 22 to authorized Bastion IP range.",
-                kb: "Azure CIS 6.1"
-            },
-            {
-                id: "AZURE-KV-003",
-                title: "Key Vault Soft-Delete / Purge Protection Missing",
-                severity: "MEDIUM",
-                resource: "kv-prod-sec-vault",
-                recommendation: "Enable EnablePurgeProtection and SoftDelete on production Key Vaults.",
-                kb: "Azure CIS 8.2"
-            },
-            {
-                id: "AZURE-IAM-004",
-                title: "Azure Active Directory MFA Conditional Access Baseline",
-                severity: "PASS",
-                resource: "Microsoft Entra ID (Tenant Default Policy)",
-                recommendation: "Maintain enforced MFA for all privileged Azure AD administrative roles.",
-                kb: "Azure CIS 1.1"
-            }
-        ];
+        if (stgCount) stgCount.innerText = `${d.storage_count || 0} Accounts`;
+        if (pubBlobs) pubBlobs.innerText = `${d.public_blobs || 0} Public Blobs`;
+        if (openNsg) openNsg.innerText = `${d.open_nsg || 0} NSG Rules`;
+        if (score) score.innerText = `${d.compliance_score || 100}%`;
 
-        container.innerHTML = azureFindings.map(f => `
-            <div class="compliance-card ${f.severity}">
-                <div class="compliance-header">
-                    <span class="compliance-title"><strong>[${f.id}]</strong> ${f.title}</span>
-                    <span class="compliance-tag ${f.severity}">${f.severity}</span>
+        if (container && d.findings) {
+            container.innerHTML = d.findings.map((f, idx) => `
+                <div class="compliance-card ${f.severity}">
+                    <div class="compliance-header">
+                        <span class="compliance-title"><strong>[AZURE-${idx + 101}]</strong> ${f.finding}</span>
+                        <span class="compliance-tag ${f.severity}">${f.severity}</span>
+                    </div>
+                    <div class="compliance-desc">Resource: <code style="color:#58a6ff;">${f.resource_id} (${f.resource_type})</code><br>Recommendation: ${f.recommendation}</div>
                 </div>
-                <div class="compliance-desc">Resource: <code style="color:#58a6ff;">${f.resource}</code> | Remediation KB: <code style="color:#3fb950;">${f.kb}</code><br>${f.recommendation}</div>
-            </div>
-        `).join("");
-    }
+            `).join("");
+        }
+    } catch(e) {}
 }
+
 
 const SEVERITY_COLOR = { CRITICAL: '#f85149', HIGH: '#f0883e', MEDIUM: '#d29922', LOW: '#3fb950', INFO: '#58a6ff' };
 
