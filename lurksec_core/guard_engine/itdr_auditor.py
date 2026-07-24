@@ -4,12 +4,19 @@ import subprocess
 import time
 from typing import Dict, List, Any
 
+ITDR_CACHE = {"timestamp": 0, "data": None}
+
 class ITDRAuditor:
     
 
     def audit_identity_threats(self) -> Dict[str, Any]:
+        now_time = time.time()
+        if ITDR_CACHE.get("data") and (now_time - ITDR_CACHE.get("timestamp", 0)) < 60.0:
+            return ITDR_CACHE["data"]
+
         now = time.strftime("%Y-%m-%d %H:%M:%S")
         findings = []
+
 
         # 1. Audit Guest Account Status
         try:
@@ -90,13 +97,16 @@ class ITDRAuditor:
 
         score = max(0, 100 - (critical * 30 + high * 15 + medium * 5))
 
-        return {
+        res = {
             "timestamp": now,
             "domain_name": os.environ.get("USERDOMAIN", platform.node()),
             "identity_health_score": score,
             "total_threats_found": len(findings),
             "critical_threats": critical,
             "high_threats": high,
+            "medium_threats": medium,
             "findings": findings
         }
-
+        ITDR_CACHE["timestamp"] = now_time
+        ITDR_CACHE["data"] = res
+        return res

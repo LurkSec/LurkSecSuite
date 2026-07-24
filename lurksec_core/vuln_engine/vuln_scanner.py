@@ -4,10 +4,16 @@ import subprocess
 import time
 from typing import Dict, List, Any
 
+VULN_CACHE = {"timestamp": 0, "data": None}
+
 class VulnerabilityScanner:
     
 
     def audit_system_vulnerabilities(self) -> Dict[str, Any]:
+        now_time = time.time()
+        if VULN_CACHE.get("data") and (now_time - VULN_CACHE.get("timestamp", 0)) < 60.0:
+            return VULN_CACHE["data"]
+
         now = time.strftime("%Y-%m-%d %H:%M:%S")
         findings = []
 
@@ -16,17 +22,14 @@ class VulnerabilityScanner:
             ps_cmd = "Get-HotFix | Select-Object -ExpandProperty HotFixId"
             out = subprocess.check_output(
                 ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_cmd],
-                text=True, errors="ignore", timeout=8
+                text=True, errors="ignore", timeout=3
             )
             installed_kbs = [line.strip() for line in out.splitlines() if line.strip().startswith("KB")]
         except Exception:
-            try:
-                out = subprocess.check_output("wmic qfe get HotFixID", shell=True, text=True, errors="ignore", timeout=8)
-                installed_kbs = [line.strip() for line in out.splitlines() if line.strip().startswith("KB")]
-            except Exception:
-                pass
+            pass
 
         kb_set = set(installed_kbs)
+
 
         patch_checks = [
             {
@@ -78,7 +81,7 @@ class VulnerabilityScanner:
         avg_cvss = sum(v["cvss"] for v in unpatched) / len(unpatched) if unpatched else 0
         risk_score = round(max(0, 100 - (avg_cvss * 4.5)), 1) if unpatched else 100.0
 
-        return {
+        res = {
             "timestamp": now,
             "os_name": platform.system() + " " + platform.release() + " (" + platform.version() + ")",
             "total_cves_scanned": len(findings),
@@ -90,4 +93,8 @@ class VulnerabilityScanner:
             "high_count": sum(1 for v in unpatched if v["severity"] == "HIGH"),
             "findings": findings
         }
+        VULN_CACHE["timestamp"] = now_time
+        VULN_CACHE["data"] = res
+        return res
+
 

@@ -467,6 +467,13 @@ body {
     margin-top: 24px;
 }
 
+div[style*="grid"] > .panel-box,
+div[style*="grid"] > .panel-box + .panel-box,
+.summary-grid > .panel-box {
+    margin-top: 0 !important;
+}
+
+
 .panel-header {
     background: var(--panel-header-bg);
     border-bottom: 1px solid var(--panel-border);

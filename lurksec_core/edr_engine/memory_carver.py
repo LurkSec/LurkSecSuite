@@ -21,22 +21,19 @@ class MemoryCarver:
 
         path = ""
         try:
-            cmd_wmic = f"wmic process where processid={pid} get ExecutablePath /format:csv"
-            out = subprocess.check_output(cmd_wmic, shell=True, text=True, stderr=subprocess.DEVNULL, timeout=2, errors="ignore")
-            lines = [line.strip() for line in out.splitlines() if line.strip() and not line.startswith("Node")]
-            if lines and "," in lines[0]:
-                parts = lines[0].split(",")
-                if len(parts) >= 2 and parts[1]:
-                    path = parts[1]
+            import psutil
+            proc = psutil.Process(pid)
+            path = proc.exe()
         except Exception:
             pass
 
         if not path:
-            try:
-                ps_cmd = f"Get-CimInstance Win32_Process -Filter 'ProcessId = {pid}' | Select-Object -ExpandProperty ExecutablePath"
-                path = subprocess.check_output(f'powershell -NoProfile -Command "{ps_cmd}"', shell=True, text=True, timeout=2, errors="ignore").strip()
-            except Exception:
-                pass
+            from lurksec_core.process_auditor import ProcessAuditor
+            for p in ProcessAuditor.get_live_processes():
+                if p.get("pid") == pid:
+                    path = p.get("path") or p.get("command_line", "")
+                    break
+
 
         if not path:
             return {

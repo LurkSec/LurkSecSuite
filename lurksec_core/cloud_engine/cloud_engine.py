@@ -11,9 +11,11 @@ def _run_cli(cmd: str) -> str:
         return ""
 
 
+AWS_CACHE = {"timestamp": 0, "data": None}
+AZURE_CACHE = {"timestamp": 0, "data": None}
+
 class AWSInspector:
     
-
     @staticmethod
     def check_cli_available() -> bool:
         out = _run_cli("aws --version 2>&1")
@@ -110,10 +112,13 @@ class AWSInspector:
             pass
         return findings
 
-
     @staticmethod
     def get_summary() -> Dict[str, Any]:
         import os
+        now_time = time.time()
+        if AWS_CACHE.get("data") and (now_time - AWS_CACHE.get("timestamp", 0)) < 60.0:
+            return AWS_CACHE["data"]
+
         now = time.strftime("%Y-%m-%d %H:%M:%S")
         cli = AWSInspector.check_cli_available()
         s3 = AWSInspector.get_s3_findings()
@@ -122,7 +127,6 @@ class AWSInspector:
         findings = s3 + sg + iam
 
         creds = os.path.expanduser("~\\.aws\\credentials")
-        config = os.path.expanduser("~\\.aws\\config")
 
         if not findings:
             if os.path.isfile(creds) or "AWS_ACCESS_KEY_ID" in os.environ:
@@ -140,7 +144,7 @@ class AWSInspector:
                     "recommendation": "Execute 'aws configure' to authenticate AWS environment"
                 })
 
-        return {
+        res = {
             "cli_installed": cli,
             "buckets_count": len(s3) or 1,
             "public_acls": sum(1 for f in s3 if f.get("severity") == "HIGH"),
@@ -148,6 +152,9 @@ class AWSInspector:
             "compliance_score": 100 if all(f.get("status") == "PASS" for f in findings) else 75,
             "findings": findings
         }
+        AWS_CACHE["timestamp"] = now_time
+        AWS_CACHE["data"] = res
+        return res
 
 
 class AzureInspector:
@@ -205,6 +212,10 @@ class AzureInspector:
     @staticmethod
     def get_summary() -> Dict[str, Any]:
         import os
+        now_time = time.time()
+        if AZURE_CACHE.get("data") and (now_time - AZURE_CACHE.get("timestamp", 0)) < 60.0:
+            return AZURE_CACHE["data"]
+
         now = time.strftime("%Y-%m-%d %H:%M:%S")
         cli = AzureInspector.check_cli_available()
         nsg = AzureInspector.get_nsg_findings()
@@ -229,7 +240,7 @@ class AzureInspector:
                     "recommendation": "Execute 'az login' to authenticate Azure subscription"
                 })
 
-        return {
+        res = {
             "cli_installed": cli,
             "storage_count": len(stg) or 1,
             "public_blobs": sum(1 for f in stg if f.get("severity") == "HIGH"),
@@ -237,6 +248,10 @@ class AzureInspector:
             "compliance_score": 100 if all(f.get("status") == "PASS" for f in findings) else 80,
             "findings": findings
         }
+        AZURE_CACHE["timestamp"] = now_time
+        AZURE_CACHE["data"] = res
+        return res
+
 
 
 class BaselineAuditor:
