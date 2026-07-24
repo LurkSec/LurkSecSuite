@@ -85,8 +85,16 @@ function renderDashboard() {
     }
     if (document.getElementById('sys-os-display')) {
         const buildStr = hostInfo.build ? ` ${hostInfo.build}` : ' Build 22631';
-        document.getElementById('sys-os-display').innerText = `OS: ${hostInfo.os || 'Windows 11'} | ${buildStr}`;
+        const el = document.getElementById('sys-os-display');
+        el.innerText = `OS: ${hostInfo.os || 'Windows 11'} | ${buildStr}`;
+        el.style.cursor = 'pointer';
+        el.onclick = (e) => {
+            e.preventDefault();
+            const sysModal = document.getElementById('modal-sys-info');
+            if (sysModal) sysModal.classList.add('show');
+        };
     }
+
 
     if (document.getElementById('modal-sys-os')) {
         document.getElementById('modal-sys-os').innerText = hostInfo.os || 'Windows 11 Pro';

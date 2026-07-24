@@ -4,7 +4,38 @@ import time
 from typing import List, Dict, Any
 
 
+import os
+import shutil
+
+def _get_aws_bin() -> str:
+    which = shutil.which("aws") or shutil.which("aws.exe")
+    if which:
+        return f'"{which}"'
+    user_aws = os.path.expanduser(r"~\AppData\Local\Programs\Amazon\AWSCLIV2\aws.exe")
+    if os.path.isfile(user_aws):
+        return f'"{user_aws}"'
+    prog_aws = r"C:\Program Files\Amazon\AWSCLIV2\aws.exe"
+    if os.path.isfile(prog_aws):
+        return f'"{prog_aws}"'
+    return "aws"
+
+def _get_az_bin() -> str:
+    which = shutil.which("az") or shutil.which("az.cmd")
+    if which:
+        return f'"{which}"'
+    user_az = os.path.expanduser(r"~\AppData\Local\Programs\Microsoft SDKs\Azure\CLI2\wbin\az.cmd")
+    if os.path.isfile(user_az):
+        return f'"{user_az}"'
+    prog_az = r"C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd"
+    if os.path.isfile(prog_az):
+        return f'"{prog_az}"'
+    return "az"
+
 def _run_cli(cmd: str) -> str:
+    if cmd.startswith("aws "):
+        cmd = _get_aws_bin() + cmd[3:]
+    elif cmd.startswith("az "):
+        cmd = _get_az_bin() + cmd[2:]
     try:
         return subprocess.check_output(cmd, shell=True, text=True, errors="ignore", timeout=10)
     except Exception:
@@ -13,6 +44,7 @@ def _run_cli(cmd: str) -> str:
 
 AWS_CACHE = {"timestamp": 0, "data": None}
 AZURE_CACHE = {"timestamp": 0, "data": None}
+
 
 class AWSInspector:
     
