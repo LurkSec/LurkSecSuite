@@ -403,6 +403,16 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 fn = params.get("filename", [""])[0]
                 self.send_json(FileQuarantiner.restore_file(fn))
 
+            elif path == "/api/cloud/summary":
+                aws_sum = AWSInspector.get_summary()
+                az_sum = AzureInspector.get_summary()
+                baseline = BaselineAuditor.audit()
+                self.send_json({
+                    "aws": aws_sum,
+                    "azure": az_sum,
+                    "baseline": baseline
+                })
+
             elif path == "/api/cloud/aws":
                 self.send_json(AWSInspector.get_summary())
 
@@ -410,6 +420,7 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 self.send_json(AzureInspector.get_summary())
 
             elif path == "/api/report/json":
+
 
 
                 summary = self.get_master_summary()

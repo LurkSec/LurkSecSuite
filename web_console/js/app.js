@@ -53,9 +53,14 @@ function initNavigation() {
             sub.classList.add('active');
             const targetPage = document.getElementById(`tab-${tabId}`);
             if (targetPage) targetPage.classList.add('active');
+
+            if (tabId === 'cloud-overview') loadCloudOverviewData();
+            if (tabId === 'cloud-aws') renderAWSCloudData();
+            if (tabId === 'cloud-azure') renderAzureCloudData();
         });
     });
 }
+
 
 async function loadMasterData() {
     if (document.activeElement && document.activeElement.tagName === 'INPUT') {
@@ -1662,7 +1667,44 @@ async function loadGuardSuiteData() {
     } catch(e) {}
 }
 
+async function loadCloudOverviewData() {
+    try {
+        const res = await fetch('/api/cloud/summary');
+        const d = await res.json();
+
+        const awsScore = d.aws ? (d.aws.compliance_score || 100) : 100;
+        const azScore = d.azure ? (d.azure.compliance_score || 100) : 100;
+        const overallScore = Math.round((awsScore + azScore) / 2);
+
+        if (document.getElementById('cloud-aws-score')) document.getElementById('cloud-aws-score').innerText = `${awsScore}%`;
+        if (document.getElementById('cloud-azure-score')) document.getElementById('cloud-azure-score').innerText = `${azScore}%`;
+        if (document.getElementById('cloud-overall-score')) document.getElementById('cloud-overall-score').innerText = `${overallScore}%`;
+
+        const awsInstalled = d.aws && d.aws.cli_installed;
+        const azInstalled = d.azure && d.azure.cli_installed;
+        if (document.getElementById('cloud-cli-status')) {
+            document.getElementById('cloud-cli-status').innerText = (awsInstalled || azInstalled) ? 'INSTALLED' : 'NOT DETECTED';
+            document.getElementById('cloud-cli-status').style.color = (awsInstalled || azInstalled) ? '#3fb950' : '#d29922';
+        }
+
+        const tbody = document.getElementById('cloud-baseline-tbody');
+        if (tbody && d.baseline) {
+            tbody.innerHTML = d.baseline.map(c => `
+                <tr>
+                    <td><strong style="color:var(--accent-blue);">${c.audit_id}</strong></td>
+                    <td>${c.component}</td>
+                    <td><span class="compliance-tag ${c.status === 'PASS' ? 'PASS' : 'HIGH'}">${c.status}</span></td>
+                    <td><code>${c.value}</code></td>
+                    <td><span class="compliance-tag ${c.severity}">${c.severity}</span></td>
+                    <td><span style="font-size:11px;color:var(--text-muted);">${c.recommendation}</span></td>
+                </tr>
+            `).join("");
+        }
+    } catch(e) {}
+}
+
 async function renderAWSCloudData() {
+
     const s3Count = document.getElementById('aws-s3-count');
     const pubAcls = document.getElementById('aws-public-acls');
     const openSg = document.getElementById('aws-open-sg');

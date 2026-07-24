@@ -7,7 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <link rel="stylesheet" href="css/style.css?v=20260724_v7">
+    <link rel="stylesheet" href="css/style.css?v=20260724_v8">
+
 
 
 
@@ -1299,7 +1300,59 @@ ________________________________________________________________________________
                     </div>
                 </section>
 
+                <section id="tab-cloud-overview" class="tab-page">
+                    <div class="section-title">
+                        <h2>LurkCloud - Multi-Cloud Security Posture Management (CSPM)</h2>
+                        <span class="section-subtitle">Real-time posture monitoring across AWS, Azure, local CLI credentials, and CIS benchmarks</span>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <span class="card-label">CLOUD CLI AUDIT</span>
+                            <div class="card-value" id="cloud-cli-status" style="color:var(--accent-blue);">DETECTED</div>
+                            <span class="card-sub">AWS & Azure Tooling</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="card-label">AWS COMPLIANCE</span>
+                            <div class="card-value" id="cloud-aws-score" style="color:#3fb950;">100%</div>
+                            <span class="card-sub">CIS AWS Posture Baseline</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="card-label">AZURE COMPLIANCE</span>
+                            <div class="card-value" id="cloud-azure-score" style="color:#3fb950;">100%</div>
+                            <span class="card-sub">CIS Azure Posture Baseline</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="card-label">UNIFIED CLOUD SCORE</span>
+                            <div class="card-value" id="cloud-overall-score" style="color:#ffffff;">100%</div>
+                            <span class="card-sub">Multi-Cloud Security Index</span>
+                        </div>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header-flex">
+                            <span>Local Cloud CLI & Credential Baseline Audit</span>
+                            <span style="font-family:var(--font-mono);font-size:11px;color:var(--accent-blue);">LIVE SYSTEM POSTURE</span>
+                        </div>
+                        <div style="padding:16px;overflow-x:auto;">
+                            <table class="raw-table">
+                                <thead>
+                                    <tr>
+                                        <th>Check ID</th>
+                                        <th>Component</th>
+                                        <th>Status</th>
+                                        <th>Current State</th>
+                                        <th>Risk Rating</th>
+                                        <th>Remediation Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cloud-baseline-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
                 <section id="tab-cloud-aws" class="tab-page">
+
                     <div class="section-title"><h2>LurkCloud - AWS Security Audit</h2><span class="section-subtitle">AWS S3 public access, IAM root key audit, and Security Group 0.0.0.0/0 ingress compliance</span></div>
                     <div class="summary-grid">
                         <div class="summary-card"><span class="card-label">S3 BUCKETS</span><div class="card-value" id="aws-s3-count">--</div><span class="card-sub">Audited Storage Buckets</span></div>
