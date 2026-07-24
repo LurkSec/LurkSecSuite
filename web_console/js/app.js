@@ -5,7 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setupFilters();
     setupSorting();
+    setInterval(loadMasterData, 3000);
 });
+
 
 let state = {
     masterData: {},

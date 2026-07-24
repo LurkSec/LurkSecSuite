@@ -474,6 +474,10 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 pass
 
     def get_master_summary(self):
+        now = time.time()
+        if SUMMARY_CACHE.get("data") and (now - SUMMARY_CACHE.get("timestamp", 0)) < 3.0:
+            return SUMMARY_CACHE["data"]
+
         host_info = SystemNetworkInfo.get_host_details()
         sockets = SystemNetworkInfo.get_network_sockets()
         siem_events = SIEMLogParser.get_real_events(max_events=40)
@@ -509,8 +513,7 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
             resolved_incidents=list(RESOLVED_INCIDENTS)
         )
 
-
-        return {
+        res = {
             "host_info": host_info,
             "sockets": sockets,
             "siem_events": siem_events,
@@ -527,15 +530,12 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 "quarantined_files": FileQuarantiner.list_quarantined_files(),
                 "policies": POLICY_ENGINE.get_rules()
             },
-
-
             "threat_feed": THREAT_FEED.get_summary(),
             "soar": {
                 "playbooks_count": len(SOAR_PLAYBOOKS.get_playbooks()),
                 "cases_count": len(SOAR_CASES.get_cases()),
                 "open_cases": len([c for c in SOAR_CASES.get_cases() if c["status"] in ["OPEN", "IN_PROGRESS"]])
             },
-
             "hunt": {
                 "sigma_rules_count": len(HUNT_SIGMA.get_rules()),
                 "yara_sigs_count": len(HUNT_YARA.get_signatures()),
@@ -547,6 +547,11 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
             "sand": sand_sum,
             "guard": guard_sum
         }
+
+        SUMMARY_CACHE["timestamp"] = now
+        SUMMARY_CACHE["data"] = res
+        return res
+
 
     def send_json(self, data):
         try:
