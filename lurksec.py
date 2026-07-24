@@ -393,24 +393,22 @@ class LurkSecHandler(SimpleHTTPRequestHandler):
                 text = params.get("text", [""])[0]
                 self.send_json(SAND_ENGINE.analyze_binary(name, sample_text=text))
 
-            elif path == "/api/guard/summary":
-                self.send_json(GUARD_ENGINE.audit_identity_threats())
+            elif path == "/api/firewall/rules":
+                self.send_json({"rules": FirewallBlocker.list_rules()})
 
-            elif path == "/api/simulate":
-                sim_type = params.get("type", ["rescan"])[0]
-                now_str = time.strftime("%Y-%m-%d %H:%M:%S")
+            elif path == "/api/edr/quarantine/list":
+                self.send_json({"files": FileQuarantiner.list_quarantined_files()})
 
-                procs = ProcessAuditor.get_live_processes()
-                proc_alerts = ProcessAuditor.evaluate_anomalies(procs)
-                id_audit = GUARD_ENGINE.audit_identity_threats()
-                vuln_audit = VULN_ENGINE.audit_system_vulnerabilities()
+            elif path == "/api/edr/quarantine/restore":
+                fn = params.get("filename", [""])[0]
+                self.send_json(FileQuarantiner.restore_file(fn))
 
-                self.send_json({
-                    "success": True,
-                    "message": f"Real-time system telemetry rescan executed at {now_str}. Evaluated {len(procs)} processes, {len(vuln_audit.get('findings', []))} vulnerability baselines, and {len(id_audit.get('findings', []))} identity checks."
-                })
+            elif path == "/api/edr/quarantine/delete":
+                fn = params.get("filename", [""])[0]
+                self.send_json(FileQuarantiner.delete_file(fn))
 
             elif path == "/api/report/json":
+
                 summary = self.get_master_summary()
                 rep = MasterReportGenerator(summary)
                 self.send_text(rep.generate_json(), "application/json")

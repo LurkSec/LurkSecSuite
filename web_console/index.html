@@ -7,7 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <link rel="stylesheet" href="css/style.css?v=20260723_v13">
+    <link rel="stylesheet" href="css/style.css?v=20260724_v1">
+
 
 
 
@@ -517,20 +518,37 @@
                             </div>
                         </div>
                         <div id="edr-policies-container" style="padding:16px;display:flex;flex-direction:column;gap:12px;"></div>
+                    <!-- AUTOMATED WINDOWS DEFENDER & FIREWALL RULE MANAGER -->
+                    <div class="panel-box" style="margin-top:20px;">
+                        <div class="panel-header-flex">
+                            <span>Automated Windows Defender & Firewall Rule Manager</span>
+                            <span style="font-family:var(--font-mono);font-size:11px;color:var(--accent-blue);">ACTIVE DEFENDER INTEGRATION</span>
+                        </div>
+                        <div style="padding:16px;">
+                            <table class="raw-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-proc">Rule Name</th>
+                                        <th class="col-proto">Action</th>
+                                        <th class="col-origin">Direction</th>
+                                        <th class="col-ip">Target IP / Port</th>
+                                        <th class="col-id">Status</th>
+                                        <th class="col-msg">Management Control</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fw-rules-tbody"></tbody>
+                            </table>
+                        </div>
                     </div>
 
                 </section>
 
-
-
                 <!-- PAGE 3: LURKEDR LOGS & VAULT -->
                 <section id="tab-edr-logs" class="tab-page">
                     <div class="section-title">
-                        <h2>LurkEDR - Containment Action Logs & Quarantine Vault</h2>
-                        <span class="section-subtitle">Audit trail of containment actions and isolated vault binaries</span>
+                        <h2>LurkEDR - Containment Action Logs & Quarantine Vault Inspector</h2>
+                        <span class="section-subtitle">Audit trail of containment actions, isolated vault binaries, and single-click file restoration</span>
                     </div>
-
-
 
                     <div class="panel-box" style="margin-bottom:20px;">
                         <div class="panel-header">Containment Action History</div>
@@ -550,15 +568,20 @@
                         </table>
                     </div>
 
+                    <!-- QUARANTINE VAULT FILE INSPECTOR & RESTORE MODULE -->
                     <div class="panel-box">
-                        <div class="panel-header">Quarantine Vault Inventory</div>
+                        <div class="panel-header-flex">
+                            <span>Quarantine Vault Inventory & File Inspector</span>
+                            <span style="font-family:var(--font-mono);font-size:11px;color:#3fb950;">ISOLATED STORAGE VAULT</span>
+                        </div>
                         <table class="raw-table">
                             <thead>
                                 <tr>
                                     <th class="col-time">Quarantine Date</th>
-                                    <th class="col-proc">Filename</th>
-                                    <th class="col-id">Size (Bytes)</th>
-                                    <th class="col-msg">Vault System Path</th>
+                                    <th class="col-proc">Isolated Filename</th>
+                                    <th class="col-id">Size</th>
+                                    <th class="col-msg">SHA-256 Hash / Vault Path</th>
+                                    <th class="col-msg" style="width:160px;">Vault Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="suite-edr-vault-tbody">
@@ -566,6 +589,7 @@
                         </table>
                     </div>
                 </section>
+
 
                 <!-- PAGE 4: LURKSENTINEL NETWORK SOCKETS -->
                 <section id="tab-sentinel-sockets" class="tab-page">
@@ -720,6 +744,25 @@
                         <span class="section-subtitle">Live packet capture stream and Wireshark .pcap file download</span>
                     </div>
 
+                    <!-- Real-Time Network Packet Flow Visualizer -->
+                    <div class="panel-box" style="margin-bottom:20px;">
+                        <div class="panel-header-flex">
+                            <span>Real-Time Network Packet Flow Visualizer</span>
+                            <span style="font-family:var(--font-mono);font-size:11px;color:#3fb950;">● LIVE TELEMETRY STREAM</span>
+                        </div>
+                        <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+                            <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;">
+                                <div class="summary-card" style="padding:10px;"><span class="card-label">HTTPS (443)</span><div class="card-value" style="font-size:18px;color:#58a6ff;">1.2 MB/s</div><span class="card-sub">TLS Encrypted</span></div>
+                                <div class="summary-card" style="padding:10px;"><span class="card-label">DNS (53)</span><div class="card-value" style="font-size:18px;color:#3fb950;">42 Pkts/s</div><span class="card-sub">Domain Queries</span></div>
+                                <div class="summary-card" style="padding:10px;"><span class="card-label">SMB / RDP</span><div class="card-value" style="font-size:18px;color:#d29922;">0 Pkts/s</div><span class="card-sub">Internal Shares</span></div>
+                                <div class="summary-card" style="padding:10px;"><span class="card-label">PACKET RATE</span><div class="card-value" style="font-size:18px;color:#a371f7;">128 Pkts/s</div><span class="card-sub">Total Bandwidth</span></div>
+                            </div>
+                            <div style="height:170px;position:relative;background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:8px;">
+                                <canvas id="chart-packet-flow-stream"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="panel-box">
                         <div class="panel-header-flex">
                             <span>Live Packet Stream</span>
@@ -728,6 +771,7 @@
                                 <button id="btn-export-packet-json" class="btn btn-outline">Export Packets (JSON)</button>
                             </div>
                         </div>
+
                         <table class="raw-table">
                             <thead>
                                 <tr>

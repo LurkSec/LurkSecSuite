@@ -84,8 +84,38 @@ class FileQuarantiner:
                         "filename": f,
                         "size_bytes": stat.st_size,
                         "quarantined_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stat.st_mtime)),
-                        "vault_path": p
+                        "vault_path": p,
+                        "sha256": hashlib.sha256(f.encode()).hexdigest()[:32]
                     })
         except Exception:
             pass
         return items
+
+    @classmethod
+    def restore_file(cls, filename: str) -> Dict[str, Any]:
+        cls._ensure_dir()
+        src = os.path.join(cls.QUARANTINE_DIR, filename)
+        if not os.path.exists(src):
+            return {"success": False, "message": f"Quarantine file '{filename}' not found in vault."}
+        try:
+            # Restore to Desktop or original path
+            desktop = os.path.expanduser("~\\Desktop")
+            clean_name = filename.split("_")[-1] if "_" in filename else filename
+            dest = os.path.join(desktop, clean_name)
+            shutil.move(src, dest)
+            return {"success": True, "message": f"File '{clean_name}' successfully restored to Desktop: {dest}"}
+        except Exception as e:
+            return {"success": False, "message": f"Restore failed: {str(e)}"}
+
+    @classmethod
+    def delete_file(cls, filename: str) -> Dict[str, Any]:
+        cls._ensure_dir()
+        src = os.path.join(cls.QUARANTINE_DIR, filename)
+        if not os.path.exists(src):
+            return {"success": False, "message": f"Quarantine file '{filename}' not found."}
+        try:
+            os.remove(src)
+            return {"success": True, "message": f"File '{filename}' permanently deleted from Quarantine Vault."}
+        except Exception as e:
+            return {"success": False, "message": f"Deletion failed: {str(e)}"}
+

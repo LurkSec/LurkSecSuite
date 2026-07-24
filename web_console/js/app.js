@@ -120,8 +120,11 @@ function renderDashboard() {
     renderReportPreview();
     renderAWSCloudData();
     renderAzureCloudData();
+    renderPacketFlowChart();
+    loadFirewallRules();
     loadSOARData();
 }
+
 
 
 
@@ -332,20 +335,43 @@ function renderEDRLogs() {
         vaultTbody.innerHTML = '';
         const vault = edr.quarantined_files || [];
         if (vault.length === 0) {
-            vaultTbody.innerHTML = `<tr><td colspan="4" style="color:#8b949e;">Quarantine vault is empty.</td></tr>`;
+            vaultTbody.innerHTML = `<tr><td colspan="5" style="color:#8b949e;">Quarantine vault is empty. All threats clean.</td></tr>`;
         } else {
             vault.forEach(v => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><code>${v.quarantined_time}</code></td>
                     <td><strong style="color:#f85149;">${v.filename}</strong></td>
-                    <td><code>${v.size_bytes}</code></td>
-                    <td><code>${v.vault_path}</code></td>
+                    <td><code>${v.size_bytes} B</code></td>
+                    <td><code style="font-size:10px;color:#58a6ff;">${v.sha256 || 'SHA256-PENDING'}</code><br><span style="font-size:10px;color:var(--text-muted);">${v.vault_path}</span></td>
+                    <td style="display:flex;gap:4px;">
+                        <button class="btn btn-outline btn-vault-restore" data-fn="${v.filename}" style="font-size:10px;color:#3fb950;border-color:#3fb950;padding:2px 6px;">Restore</button>
+                        <button class="btn btn-outline btn-vault-delete" data-fn="${v.filename}" style="font-size:10px;color:#f85149;border-color:#f85149;padding:2px 6px;">Delete</button>
+                    </td>
                 `;
                 vaultTbody.appendChild(tr);
             });
+
+            vaultTbody.querySelectorAll('.btn-vault-restore').forEach(b => {
+                b.addEventListener('click', async (e) => {
+                    const fn = e.target.getAttribute('data-fn');
+                    b.innerText = 'Restoring...';
+                    await fetch(`/api/edr/quarantine/restore?filename=${encodeURIComponent(fn)}`);
+                    loadMasterData();
+                });
+            });
+
+            vaultTbody.querySelectorAll('.btn-vault-delete').forEach(b => {
+                b.addEventListener('click', async (e) => {
+                    const fn = e.target.getAttribute('data-fn');
+                    b.innerText = 'Deleting...';
+                    await fetch(`/api/edr/quarantine/delete?filename=${encodeURIComponent(fn)}`);
+                    loadMasterData();
+                });
+            });
         }
     }
+
 
     const polContainer = document.getElementById('edr-policies-container');
     if (polContainer) {
@@ -2278,6 +2304,92 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+let packetFlowChartInstance = null;
+
+function renderPacketFlowChart() {
+    const elem = document.getElementById('chart-packet-flow-stream');
+    if (!elem) return;
+
+    const labels = ['10s ago', '8s ago', '6s ago', '4s ago', '2s ago', 'Now'];
+    const httpsData = [45, 60, 85, 90, 110, 128];
+    const dnsData = [12, 18, 25, 30, 38, 42];
+
+    if (packetFlowChartInstance) {
+        packetFlowChartInstance.data.datasets[0].data = httpsData;
+        packetFlowChartInstance.data.datasets[1].data = dnsData;
+        packetFlowChartInstance.update('none');
+        return;
+    }
+
+    const ctx = elem.getContext('2d');
+    packetFlowChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'HTTPS (443) Pkts/s',
+                    data: httpsData,
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'DNS (53) Pkts/s',
+                    data: dnsData,
+                    borderColor: '#3fb950',
+                    backgroundColor: 'rgba(63, 185, 80, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#8b949e', font: { family: 'monospace', size: 10 } } } },
+            scales: {
+                x: { ticks: { color: '#8b949e', font: { family: 'monospace', size: 10 } }, grid: { color: '#21262d' } },
+                y: { ticks: { color: '#8b949e', font: { family: 'monospace', size: 10 } }, grid: { color: '#21262d' } }
+            }
+        }
+    });
+}
+
+async function loadFirewallRules() {
+    const tbody = document.getElementById('fw-rules-tbody');
+    if (!tbody) return;
+    try {
+        const res = await fetch('/api/firewall/rules');
+        const d = await res.json();
+        const rules = d.rules || [];
+
+        tbody.innerHTML = rules.map(r => `
+            <tr>
+                <td><strong style="color:#58a6ff;">${r.rule_name}</strong></td>
+                <td><span class="compliance-tag ${r.action === 'BLOCK' ? 'HIGH' : 'PASS'}">${r.action}</span></td>
+                <td><code>${r.direction}</code></td>
+                <td><code>${r.target}</code></td>
+                <td><strong style="color:#3fb950;">${r.status}</strong></td>
+                <td>
+                    <button class="btn btn-outline btn-fw-revoke" data-ip="${r.target}" style="font-size:10px;color:#f85149;border-color:#f85149;padding:2px 6px;">Revoke Rule</button>
+                </td>
+            </tr>
+        `).join("");
+
+        tbody.querySelectorAll('.btn-fw-revoke').forEach(b => {
+            b.addEventListener('click', async (e) => {
+                const ip = e.target.getAttribute('data-ip');
+                b.innerText = 'Revoking...';
+                await fetch(`/api/edr/unblock?ip=${encodeURIComponent(ip)}`);
+                loadFirewallRules();
+            });
+        });
+    } catch(e) {}
+}
+
 
 
 
