@@ -84,8 +84,20 @@ function renderDashboard() {
         document.getElementById('sys-ip-display').innerText = `IP: ${hostInfo.local_ip || '127.0.0.1'}`;
     }
     if (document.getElementById('sys-os-display')) {
-        document.getElementById('sys-os-display').innerText = `OS: ${hostInfo.os || 'Windows 11'}`;
+        const buildStr = hostInfo.build ? ` ${hostInfo.build}` : ' Build 22631';
+        document.getElementById('sys-os-display').innerText = `OS: ${hostInfo.os || 'Windows 11'} | ${buildStr}`;
     }
+
+    if (document.getElementById('modal-sys-os')) {
+        document.getElementById('modal-sys-os').innerText = hostInfo.os || 'Windows 11 Pro';
+        document.getElementById('modal-sys-build').innerText = hostInfo.build || 'Build 22631';
+        document.getElementById('modal-sys-arch').innerText = hostInfo.arch || 'AMD64';
+        document.getElementById('modal-sys-cores').innerText = `${hostInfo.cpu_cores || 8} Cores`;
+        document.getElementById('modal-sys-ram').innerText = `${hostInfo.ram_total_gb || 16.0} GB`;
+        document.getElementById('modal-sys-uptime').innerText = `${hostInfo.uptime_hrs || 12.4} Hours`;
+        document.getElementById('modal-sys-py').innerText = hostInfo.python_ver || '3.14.0';
+    }
+
 
     // LurkSOC Metrics
     const soc = data.soc_incidents || {};
@@ -2332,6 +2344,20 @@ async function loadFirewallRules() {
         });
     } catch(e) {}
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const sysModal = document.getElementById('modal-sys-info');
+    const btnSysOs = document.getElementById('sys-os-display');
+    const btnCloseSys = document.getElementById('btn-close-sys-info');
+
+    function toggleSysInfoModal() {
+        if (sysModal) sysModal.classList.toggle('show');
+    }
+
+    if (btnSysOs) btnSysOs.addEventListener('click', toggleSysInfoModal);
+    if (btnCloseSys) btnCloseSys.addEventListener('click', toggleSysInfoModal);
+});
+
 
 
 

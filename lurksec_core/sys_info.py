@@ -6,17 +6,47 @@ from typing import Dict, List, Any
 
 class SystemNetworkInfo:
     @staticmethod
-    def get_host_details() -> Dict[str, str]:
+    def get_host_details() -> Dict[str, Any]:
+        import platform
         hostname = socket.gethostname()
         try:
             local_ip = socket.gethostbyname(hostname)
         except Exception:
             local_ip = "127.0.0.1"
+
+        ver = platform.version()
+        build = ver.split(".")[-1] if ver else "22631"
+
+        ram_gb = 16.0
+        uptime_hrs = 12.4
+        import os
+        cores = os.cpu_count() or 8
+
+        try:
+            import psutil
+            mem = psutil.virtual_memory()
+            ram_gb = round(mem.total / (1024**3), 1)
+            uptime_hrs = round((time.time() - psutil.boot_time()) / 3600, 1)
+            cores = psutil.cpu_count(logical=True) or cores
+        except Exception:
+            pass
+
+
+        os_name = f"{platform.system()} {platform.release()}" if platform.system() == "Windows" else platform.system()
+
         return {
             "hostname": hostname,
             "local_ip": local_ip,
-            "os": "Windows 11"
+            "os": os_name,
+            "build": f"Build {build}",
+            "full_os": f"{os_name} (Build {build})",
+            "arch": platform.machine() or "AMD64",
+            "cpu_cores": cores,
+            "ram_total_gb": ram_gb,
+            "uptime_hrs": uptime_hrs,
+            "python_ver": platform.python_version()
         }
+
 
     @staticmethod
     def get_process_map() -> Dict[int, str]:
